@@ -1,0 +1,13 @@
+{% comment %}Animación de un ejemplo de teoría; se incluye con el parámetro `scene` (clave de static/js/animations/scenes.js).
+El botón aparece solo con JavaScript; static/js/theory-animation.js construye el escenario con los modos
+«Paso a paso» y «Automático» (velocidad ajustable).{% endcomment %}
+<div class="theory-animation" data-theory-animation data-scene="{{ scene }}" data-testid="theory-animation-{{ scene }}">
+  <div class="anim-launch" data-anim-launch hidden>
+    <button type="button" class="btn btn-primary anim-start" data-anim-start aria-expanded="false" data-testid="anim-start-{{ scene }}">
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.4 4.9v6.2L11.2 8z" fill="currentColor"/></svg>
+      Iniciar animación
+    </button>
+    <span class="anim-launch-hint">{% if hint %}{{ hint }}{% else %}Míralo resolverse paso a paso o en modo automático.{% endif %}</span>
+  </div>
+  <div class="anim-stage" data-anim-stage hidden></div>
+</div>

@@ -1,0 +1,45 @@
+name: Verify NumLearn
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: numlearn
+          POSTGRES_PASSWORD: local-ci-only
+          POSTGRES_DB: numlearn
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SECRET_KEY: ci-only-ephemeral-key-not-used-for-a-deployed-environment-12345
+      DEBUG: "True"
+      NUMLEARN_DEBUG: "True"
+      DATABASE_URL: postgres://numlearn:local-ci-only@localhost:5432/numlearn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install -r requirements.txt
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py migrate --noinput
+      - run: python manage.py test
+      - run: npm test
+      - run: python manage.py collectstatic --noinput
+        env:
+          DEBUG: "False"
+          NUMLEARN_DEBUG: "False"
+      - run: python manage.py check --deploy
+        env:
+          DEBUG: "False"
+          NUMLEARN_DEBUG: "False"

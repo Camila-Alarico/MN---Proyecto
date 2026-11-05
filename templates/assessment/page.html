@@ -1,0 +1,23 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}Autoevaluación · NumLearn{% endblock %}
+{% block scripts %}<link href="{% static 'css/assessment.css' %}" rel="stylesheet"><script type="module" src="{% static 'js/assessment/assessment.js' %}"></script>{% endblock %}
+{% block content %}
+<header class="study-heading compact"><span class="eyebrow">AUTOEVALUACIÓN</span><h1>¿Entiendes el procedimiento<br>o solo recuerdas la respuesta?</h1><p>Combina selección múltiple, explicaciones con tus palabras y problemas que se resuelven paso a paso con datos distintos en cada intento.</p></header>
+<div id="assess" data-endpoint="{% url 'assessment:api' %}" data-scope="{{ scope }}">
+<section id="assess-start" class="assessment-intro">
+  <span class="eyebrow">SELECCIÓN DEL MÓDULO</span>
+  <h2>¿Qué módulo quieres autoevaluar?</h2>
+  <p>Elige el recorrido que corresponde a lo que estudiaste. Puedes cambiar de módulo antes de iniciar otro intento.</p>
+  <fieldset class="scope-grid"><legend class="visually-hidden">Alcance de la evaluación</legend>
+  {% for card in scopes %}<label class="scope-option"><input type="radio" name="scope" value="{{ card.key }}" {% if card.key == scope %}checked{% endif %}><span><strong>{{ card.title }}</strong><small>{{ card.description }}</small></span></label>{% endfor %}
+  </fieldset>
+  <ul class="assess-mix"><li><strong>Conceptos</strong> Selección múltiple con 5 o 6 opciones: puede haber varias correctas.</li><li><strong>Explicación</strong> Respuesta abierta: describe el procedimiento y justifica tus decisiones.</li><li><strong>Problemas paso a paso</strong> No se avanza hasta completar el paso anterior. Los datos cambian en cada intento.</li></ul>
+  <p class="assess-notice" role="note"><strong>Antes de empezar:</strong> si sales de la autoevaluación, cambias de pestaña o minimizas la ventana durante más de 5 segundos, el intento se reiniciará completamente. Si regresas antes de superar ese tiempo, conservarás tu avance. La plataforma no registra ni muestra salidas o tiempos fuera a docentes.</p>
+  <button id="start-assessment" class="btn btn-primary" type="button">Comenzar módulo seleccionado →</button>
+  <a class="practice-reading" href="{% url 'theory-hub' %}">Prefiero repasar la teoría primero</a>
+</section>
+<div id="assess-work" hidden></div>
+<p id="assess-error" class="activity-feedback error" role="alert" hidden></p>
+</div>
+<noscript><p class="notice">Activa JavaScript para realizar la autoevaluación.</p></noscript>
+{% endblock %}

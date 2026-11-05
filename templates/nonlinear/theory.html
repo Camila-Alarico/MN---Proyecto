@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Teoría · NumLearn{% endblock %}
+{% block content %}
+<header class="study-heading"><span class="eyebrow">MÓDULO 01 / TEORÍA</span><h1>Primero entiende.<br>Después, resuelve.</h1><p>Elige un tema. Cada lectura conecta con un ejemplo y una forma de ponerlo a prueba.</p></header>
+{% include 'components/topic_strip.html' %}
+<div class="study-topic-list">
+{% for item in route_topics %}<article class="study-topic"><span class="topic-number">0{{ forloop.counter }}</span><div><h2>{{ item.title }}</h2><p>{{ item.summary }}</p>{% if item.family %}<div class="topic-methods">{% for m in item.family.methods %}<a href="{% url 'nonlinear:page' m.slug %}">{{ m.title }}</a>{% endfor %}</div>{% endif %}</div><a class="btn btn-light" href="{% url 'nonlinear:page' item.slug %}" aria-label="Abrir {{ item.title }}">Abrir <span aria-hidden="true">↗</span></a></article>{% endfor %}
+</div>
+<div class="study-next"><div><span class="eyebrow">DE LA IDEA AL CÁLCULO</span><h2>Comprueba lo que entendiste</h2><p>En la práctica, tú eliges los datos y calculas cada paso.</p></div><a class="btn btn-primary" href="{% url 'nonlinear:practice' %}">Ir a práctica guiada →</a></div>
+{% endblock %}

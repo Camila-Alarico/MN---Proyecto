@@ -1,0 +1,12 @@
+<header class="topbar">
+  <button id="menu-toggle" class="icon-button mobile-menu" aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menú">
+    <span aria-hidden="true">☰</span>
+  </button>
+  <nav aria-label="Navegación principal">
+    <a href="{% url 'home' %}#modules">Módulos</a>
+  </nav>
+  <form action="{% url 'search' %}" method="get" class="search-box" role="search">
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+    <input name="q" type="search" aria-label="Buscar en el curso" placeholder="{% if errors_focus %}Busca: error relativo, tolerancia…{% else %}Busca un tema: Newton, errores…{% endif %}" maxlength="80" value="{{ request.GET.q }}">
+  </form>
+</header>

@@ -1,0 +1,77 @@
+/* Menú lateral auto-ocultable (escritorio).
+   Oculto por defecto; aparece al acercar el puntero al borde izquierdo, al recibir el foco
+   o con el botón ☰. El botón con el dardo lo «clava» (fija) y la preferencia se recuerda
+   en localStorage (ver la clase .sidebar-pinned que base.html aplica antes de pintar). */
+.sidebar-pin { display: none; }
+.sidebar-hotzone { display: none; }
+
+@media (min-width: 1101px) {
+  .sidebar-pin {
+    position: absolute; top: 14px; right: 12px; z-index: 2;
+    display: inline-grid; place-items: center;
+    width: 28px; height: 28px; padding: 0;
+    border: 1px solid #ffffff1f; border-radius: 8px;
+    background: #ffffff0d; color: #aab7cf; cursor: pointer;
+    transition: background .18s, color .18s, border-color .18s;
+  }
+  .sidebar-pin:hover { background: #ffffff1c; color: #fff; border-color: #ffffff3d; }
+  .sidebar-pin svg { width: 16px; height: 16px; transform: rotate(-12deg) translate(1px, -1px); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1); }
+  .sidebar-pin .dart-flight { fill: currentColor; opacity: .55; }
+  .sidebar-pin .dart-barrel { fill: currentColor; }
+  .sidebar-pin[aria-pressed=true] { color: #cfc4ff; background: #8f7cf02b; border-color: #a99bf466; }
+  .sidebar-pin[aria-pressed=true] svg { transform: rotate(0) translate(-1px, 1px); }
+  .sidebar-pin[aria-pressed=true] .dart-flight { opacity: 1; }
+  .sidebar-pin.is-thrown svg { animation: dart-throw .42s cubic-bezier(.2, .9, .3, 1.2); }
+  @keyframes dart-throw {
+    0% { transform: rotate(-12deg) translate(7px, -7px) scale(.85); opacity: .3; }
+    70% { transform: rotate(0) translate(-2px, 2px) scale(1.05); opacity: 1; }
+    100% { transform: rotate(0) translate(-1px, 1px); }
+  }
+  .sidebar .brand { padding-right: 34px; }
+
+  /* Sin fijar: el contenido ocupa todo el ancho y el menú flota sobre él. */
+  html:not(.sidebar-pinned) .workspace { margin-left: 0; }
+  html:not(.sidebar-pinned) .sidebar {
+    transform: translateX(calc(-100% - 18px));
+    box-shadow: none;
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1) .3s, box-shadow .3s .3s;
+    z-index: 45;
+  }
+  html:not(.sidebar-pinned) .sidebar.is-peeking,
+  html:not(.sidebar-pinned) .sidebar:hover,
+  html:not(.sidebar-pinned) .sidebar:focus-within {
+    transform: none;
+    box-shadow: 0 28px 70px #0f1a3352, 0 0 0 1px #ffffff1a inset;
+    transition-delay: 0s;
+  }
+  html:not(.sidebar-ready) .sidebar, html:not(.sidebar-ready) .workspace { transition: none !important; }
+  .workspace { transition: margin-left .28s cubic-bezier(.2, .8, .2, 1); }
+
+  /* Franja sensible del borde izquierdo con una pestaña visible como pista. */
+  .sidebar-hotzone {
+    display: block; position: fixed; inset: 0 auto 0 0; width: 18px; z-index: 44;
+    cursor: e-resize; background: transparent;
+  }
+  html.sidebar-pinned .sidebar-hotzone { display: none; }
+  .sidebar-handle {
+    position: absolute; left: 4px; top: 50%; width: 6px; height: 72px; margin-top: -36px;
+    border-radius: 6px; background: #5542b4; opacity: .38;
+    box-shadow: 0 4px 14px #5542b440;
+    transition: opacity .2s, width .2s, left .2s;
+  }
+  .sidebar-hotzone:hover .sidebar-handle { opacity: .85; width: 8px; left: 5px; }
+  .sidebar-handle::after {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -3px 0 0 -3.5px;
+    border-top: 1.6px solid #fff; border-right: 1.6px solid #fff; transform: rotate(45deg); opacity: .9;
+  }
+
+  /* Botón ☰ también en escritorio mientras el menú no esté fijado. */
+  html:not(.sidebar-pinned) .mobile-menu { display: block; }
+}
+
+@media (min-width: 1101px) and (prefers-reduced-motion: reduce) {
+  html:not(.sidebar-pinned) .sidebar, .workspace { transition: none; }
+}
+@media (min-width: 1101px) {
+  html:has(.sidebar.is-peeking) .sidebar-handle, html:has(.sidebar:hover) .sidebar-handle { opacity: 0; }
+}

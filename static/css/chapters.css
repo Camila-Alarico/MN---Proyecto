@@ -1,0 +1,68 @@
+/* Mathematical chapter previews: original SVG, fixed scales, no animation loop. */
+.chapter-explorer {
+  display: flex;
+  flex-direction: column;
+  --chapter-line: #35445d;
+  background: #132237;
+  color: #eef0ff;
+  border: 1px solid #283950;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 28px 0 46px;
+  background-image: linear-gradient(90deg, transparent calc(50% - 1px), #ffffff06 50%, transparent calc(50% + 1px));
+}
+.chapter-masthead { display: flex; justify-content: space-between; align-items: center; padding: 22px 32px; border-bottom: 1px solid var(--chapter-line); font: .625rem var(--mono); letter-spacing: .08em; color: #b9c3d9; }
+.chapter-position { color: #d0c4ff; white-space: nowrap; margin-left: 20px; }
+.chapter-panel { display: grid; grid-template-columns: minmax(0,.94fr) minmax(0,1.06fr); min-height: 438px; align-items: center; animation: chapter-appear .28s ease-out; }
+.chapter-copy { padding: 36px 0 36px 36px; }
+.chapter-kicker { font: .625rem var(--mono); letter-spacing: .1em; color: #b7abcF; }
+.chapter-copy h2 { font-size: clamp(2rem,3.2vw,3.6rem); font-weight: 400; color: #f4f3fc; line-height: 1.08; letter-spacing: -.055em; margin: 20px 0; }
+.chapter-copy h2 em { color: #c0abff; font-style: normal; }
+.chapter-copy p { max-width: 36ch; color: #bdc7d8; font-size: .875rem; line-height: 1.75; margin: 0 24px 24px 0; }
+.chapter-action { display: inline-flex; align-items: center; justify-content: space-between; gap: 30px; padding: 13px 18px; border: 1px solid #a797d1; border-radius: 4px; color: #202c43; background: #e6ddff; min-height: 48px; font-size: .8125rem; font-weight: 500; }
+.chapter-action:hover { color: #162339; background: #f0eaff; text-decoration: none; }
+.chapter-action>span { font-size: 1.125rem; transition: transform .15s; }
+.chapter-action:hover>span { transform: translate(2px,-2px); }
+.chapter-secondary { display: block; width: fit-content; color: #c6bbec; font-size: .75rem; padding: 12px 0; margin-top: 6px; }
+.chapter-secondary:hover { color: #fff; }
+.chapter-figure { align-self: stretch; display: flex; flex-direction: column; justify-content: center; margin: 0; padding: 28px 24px; }
+.chapter-chart-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font: .5625rem var(--mono); color: #b6c2da; padding: 0 10px; }
+.chapter-svg, .chapter-figure .reference-plot { width: 100%; height: auto; display: block; overflow: visible; margin: 26px 0 20px; }
+.chapter-figure figcaption { font-size: .75rem; line-height: 1.7; color: #b4c0d5; padding: 0 10px; max-width: 55ch; }
+.chapter-figure figcaption strong { display: block; font-weight: 500; color: #e2def2; margin-bottom: 5px; }
+.chapter-grid path, .chapter-figure .plot-grid line { fill: none; stroke: #2d3c52; stroke-width: 1; }
+.chapter-axis, .chapter-figure .plot-axis { stroke: #71819b; stroke-width: 1; fill: none; }
+.chapter-ticks text, .chapter-grid text, .chapter-figure .plot-grid text { fill: #b3c0d7; font: 11px var(--mono); text-anchor: middle; }
+.chapter-measure { stroke: #c0a8ff; stroke-width: 5; stroke-linecap: round; }
+.chapter-guide, .chapter-figure .plot-leader { fill: none; stroke: #9282ba; stroke-width: 1; stroke-dasharray: 3 4; }
+.chapter-mark, .chapter-figure .initial-point { fill: #d5c4ff; stroke: #132237; stroke-width: 2; }
+.chapter-reference, .chapter-figure .root-point { fill: #c3def4; stroke: #132237; stroke-width: 2; }
+.chapter-annotation { fill: #ebe5ff; font: 16px var(--mono); text-anchor: middle; }
+.chapter-small-label { fill: #c8cee4; font: 12px var(--sans); text-anchor: middle; }
+.chapter-curve, .chapter-figure .reference-curve { fill: none; stroke: #c0a8ff; stroke-width: 2.5; stroke-linejoin: round; }
+.chapter-double { fill: #132237; stroke: #d5c4ff; stroke-width: 2.5; }
+.chapter-figure .reference-tangent { stroke: #c3def4; stroke-dasharray: 6 5; }
+.chapter-figure .root-label, .chapter-figure .initial-label, .chapter-figure .function-label, .chapter-figure .axis-label { fill: #c8cee4; }
+.chapter-tabs { order: 1; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-top: 1px solid var(--chapter-line); }
+.chapter-tabs>a { display: flex; align-items: center; gap: 14px; padding: 23px 26px; color: #b5c1d7; font-size: .8125rem; border-right: 1px solid var(--chapter-line); border-top: 2px solid transparent; }
+.chapter-tabs>a:last-child { border-right: 0; }
+.chapter-tabs>a>span:first-child { font: .75rem var(--mono); color: #b8a6eb; }
+.chapter-tabs small { display: block; font-size: .6875rem; color: #b5c1d7; margin-top: 4px; }
+.chapter-tabs>a:hover { background: #ffffff06; text-decoration: none; color: #fff; }
+.chapter-tabs>a[aria-selected=true] { background: #ffffff08; border-top-color: #b8a0fa; color: #eee8ff; }
+.chapter-tab-arrow { margin-left: auto; font-size: 1.125rem; opacity: .65; }
+.chapter-tabs>a[aria-selected=true] .chapter-tab-arrow { opacity: 1; color: #d5c4ff; }
+.chapter-tabs>a:focus-visible { outline-color: #ddd0ff; outline-offset: -5px; }
+.chapter-panel:focus-visible { outline-color: #ddd0ff; outline-offset: -5px; }
+@keyframes chapter-appear { from { transform: translateY(6px); } to { transform: none; } }
+@media(min-width:1600px) { .chapter-panel { min-height: 480px; } .chapter-copy { padding: 42px; } .chapter-figure { padding: 36px; } }
+@media(max-width:760px) {
+  .chapter-masthead { padding: 18px 20px; line-height: 1.8; }
+  .chapter-panel { grid-template-columns: 1fr; }
+  .chapter-copy { padding: 28px 24px 0; }
+  .chapter-copy p { max-width: 50ch; margin-right: 0; }
+  .chapter-figure { padding: 22px 14px; }
+  .chapter-tabs>a { padding: 16px 10px; display: block; font-size: .6875rem; }
+  .chapter-tabs>a>span:first-child { display: block; margin-bottom: 5px; }
+  .chapter-tabs small, .chapter-tab-arrow { display: none; }
+}

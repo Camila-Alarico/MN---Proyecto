@@ -1,0 +1,148 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}{{ method.title }} · {{ family.title }} · NumLearn{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'js/nonlinear/simulator.js' %}"></script>{% endblock %}
+{% block content %}
+<div class="breadcrumb-line"><a href="/ecuaciones-no-lineales/">Módulo 1</a> / <a href="{% url 'nonlinear:page' family.default_slug %}">{{ family.title }}</a> / {{ method.title }}</div>
+
+<header class="method-header">
+  <div>
+    <span class="eyebrow">{{ family.title|upper }} · PASO {{ route_position|stringformat:'02d' }}</span>
+    <h1 id="method-title">{{ method.title }}</h1>
+    <p id="method-description">{{ method.description }}</p>
+  </div>
+
+</header>
+
+{% include 'components/method_tabs.html' %}
+{% include 'components/alert.html' %}
+
+<div class="simulator-grid" id="simulator" data-method="{{ method_key }}" data-method-panel="laboratory">
+
+  {# ---- Configuración ---- #}
+  <section class="panel configuration solver-configuration">
+    <div class="panel-heading"><h2><i class="bi bi-sliders"></i> Configura el problema</h2><span class="step-label">01</span></div>
+
+    <form id="solver-form">
+      {% csrf_token %}
+      <div class="solver-primary">
+        <div class="solver-method">
+          <label for="method-select">Método</label>
+          <select id="method-select" aria-describedby="method-family-help" data-testid="method-select">
+            {% for group in families %}<optgroup label="{{ group.title }}">{% for m in group.methods %}<option value="{{ m.key }}" {% if m.key == method_key %}selected{% endif %}>{{ m.title }}</option>{% endfor %}</optgroup>{% endfor %}
+          </select>
+          <details class="method-conditions"><summary>Condiciones del método</summary><small class="input-help" id="method-family-help">{{ family.description }}</small></details>
+        </div>
+        <div class="solver-expression">
+          <label for="expression" id="expression-label">{% if method_key == 'fixed-point' %}Función g(x){% else %}Función f(x){% endif %}</label>
+          <input id="expression" name="expression" value="{{ method.expression }}" required maxlength="200" spellcheck="false">
+          <small class="input-help">Usa x, ^, sin, cos, tan, exp, log, sqrt, abs.</small>
+        </div>
+        <div class="solver-examples">
+          <label for="example">Ejemplos rápidos</label>
+          <select id="example">
+            <option value="">Cargar ejemplo…</option>
+            <option value="0">x³ − x − 2</option>
+            <option value="1">cos(x) − x</option>
+            <option value="2">exp(−x) − x</option>
+            <option value="3">x² − 4</option>
+            <option value="4">Raíz doble: (x−1)²(x+2)</option>
+            <option value="5">Mismo polinomio, raíz simple −2</option>
+            <option value="6">Derivada nula: ¿por qué falla Newton?</option>
+          </select>
+          <p id="example-guidance" class="input-help" aria-live="polite"></p>
+        </div>
+      </div>
+      <div class="solver-data">
+      <fieldset class="solver-initial"><legend>Datos iniciales</legend>
+      <div class="parameter-grid">
+        <div data-param="a"><label for="a">Extremo a</label><input id="a" name="a" type="number" step="any" value="1"></div>
+        <div data-param="b"><label for="b">Extremo b</label><input id="b" name="b" type="number" step="any" value="2"></div>
+        <div data-param="x0"><label for="x0">Punto inicial x₀</label><input id="x0" name="x0" type="number" step="any" value="1.5"></div>
+        <div data-param="x1"><label for="x1">Segundo punto x₁</label><input id="x1" name="x1" type="number" step="any" value="2"></div>
+      </div>
+
+      </fieldset>
+      <fieldset class="solver-precision"><legend>Precisión y límite</legend>
+        <div class="parameter-grid">
+          <div><label for="tolerance">Tolerancia</label><input id="tolerance" name="tolerance" type="number" step="any" min="0.000000000001" max="0.1" value="0.0001" required></div>
+          <div><label for="max_iterations">Máximo de iteraciones</label><input id="max_iterations" name="max_iterations" type="number" min="1" max="200" value="100" required></div>
+        </div>
+      </fieldset>
+      </div>
+      <div class="solver-actions">
+        <button id="execute" class="btn btn-primary" type="submit"><i class="bi bi-play-fill"></i> Ejecutar</button>
+        <button id="reset" type="reset" class="btn btn-light">↺ Reiniciar</button>
+        <div class="share-row"><button id="copy-link" type="button" class="btn btn-light"><i class="bi bi-link-45deg"></i> Copiar enlace</button><span id="copy-feedback" class="input-help" aria-live="polite"></span></div>
+      </div>
+    </form>
+  </section>
+
+  {# ---- Gráfica ---- #}
+  <section class="panel graph-panel">
+    <div class="panel-heading"><h2><i class="bi bi-graph-up"></i> Visualización interactiva</h2><span id="state" class="status">Listo para explorar</span></div>
+    <div class="iteration-toolbar" role="group" aria-label="Recorrer las iteraciones">
+      <button id="previous" type="button" class="btn btn-light" disabled>← Anterior</button>
+      <button id="next" type="button" class="btn btn-light">Siguiente iteración →</button>
+      <button id="auto" type="button" class="btn btn-light"><i class="bi bi-play-circle"></i> Modo automático</button>
+    </div>
+    <details class="graph-controls">
+      <summary>Rango de la gráfica</summary>
+      <form id="range-form">
+        <div class="parameter-grid">
+          <div><label for="range-min">X mínimo</label><input id="range-min" type="number" step="any" min="-1e12" max="1e12" value="-2" required></div>
+          <div><label for="range-max">X máximo</label><input id="range-max" type="number" step="any" min="-1e12" max="1e12" value="3" required></div>
+          <div><label for="y-min">Y mínimo (opcional)</label><input id="y-min" type="number" step="any"></div>
+          <div><label for="y-max">Y máximo (opcional)</label><input id="y-max" type="number" step="any"></div>
+        </div>
+        <button class="btn btn-light" type="submit">Aplicar rango</button>
+      </form>
+      <p>El rango cambia la vista, no el intervalo ni el cálculo. También puedes usar zoom y arrastrar la gráfica.</p>
+    </details>
+    <div id="plot" role="region" class="plot" aria-label="Gráfica de la función y construcción del método"></div>
+    <div id="result-summary" class="result-summary" aria-live="polite">Configura tu función y observa cómo se aproxima a una raíz.</div>
+  </section>
+
+  {# ---- Iteraciones (ancho completo, ver learning.css) ---- #}
+  <section class="panel iterations-panel">
+    <div class="panel-heading">
+      <h2><i class="bi bi-table"></i> Iteraciones</h2>
+      <div class="panel-tools">
+        <span class="step-label" id="iteration-count">0 pasos</span>
+        <button id="export-csv" type="button" class="btn btn-light btn-small" disabled><i class="bi bi-download"></i> Exportar CSV</button>
+      </div>
+    </div>
+    <label for="iteration-slider">Recorrer los pasos calculados</label>
+    <input id="iteration-slider" type="range" min="0" max="0" value="0" disabled aria-valuetext="Sin iteraciones">
+    <div id="iterations" class="table-scroll"><p class="empty-state">Ejecuta el método para consultar sus iteraciones.</p></div>
+  </section>
+</div>
+
+<div data-method-panel="laboratory">{% include 'components/explanation_card.html' %}</div>
+
+{% include 'components/worked_example.html' %}
+
+<section class="panel" data-method-panel="laboratory">
+  <h2>¿Cómo disminuye el residuo?</h2>
+  <p>Residuo: |f(x)| (en punto fijo, |g(x)−x|). No es el error real |x−r|. La escala vertical es logarítmica; un residuo cero no se dibuja en ella.</p>
+  <div id="convergence-plot" role="region" class="plot convergence-plot" aria-label="Residuo por iteración">Ejecuta el método para observar la evolución del residuo.</div>
+</section>
+
+<div id="theory" class="theory-grid" data-method-panel="theory">
+  {% include 'components/formula_card.html' %}
+  <section class="panel">
+    <span class="eyebrow">CUÁNDO DETENERSE</span>
+    <h3>Criterio de parada</h3>
+    <p>Raíz exacta en la precisión disponible, o paso absoluto y residuo ≤ tolerancia. Bisección también puede usar su cota de intervalo junto al residuo.</p>
+    <p>El primer paso entre aproximaciones no existe en métodos cerrados: se muestra «—». Un paso pequeño por sí solo no prueba convergencia. La tolerancia es un umbral elegido; el error real requiere conocer la raíz. La cota de Bisección supone continuidad y cambio de signo.</p>
+  </section>
+  <section class="panel">
+    <span class="eyebrow">PARA EXPLORAR</span>
+    <h3>Consejos del método</h3>
+    <p id="method-tip">{{ method.tip }}</p>
+    <p>Los cálculos conservan la precisión de punto flotante; solo redondeamos los valores en pantalla.</p>
+  </section>
+</div>
+
+<div data-method-panel="laboratory">{% include 'components/math_assistant.html' %}</div>
+{{ method_registry|json_script:'method-registry' }}
+{% endblock %}

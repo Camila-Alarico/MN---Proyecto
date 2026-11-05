@@ -1,0 +1,24 @@
+<aside id="sidebar" class="sidebar" aria-label="Navegación de aprendizaje">
+  <button type="button" id="menu-close" class="sidebar-close" aria-label="Cerrar menú">×</button>
+  <button type="button" id="sidebar-pin" class="sidebar-pin" aria-pressed="false" aria-label="Fijar menú lateral" title="Fijar menú" data-testid="sidebar-pin">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 21.2 6.4 17.6"/><path class="dart-barrel" d="M5.6 16.4 7.6 18.4 12.6 13.4 10.6 11.4Z"/><path d="M11.6 12.4 16.4 7.6"/><path class="dart-flight" d="M16.4 7.6 15.2 2.6 19.2 4.8Z"/><path class="dart-flight" d="M16.4 7.6 21.4 8.8 19.2 4.8Z"/></svg>
+  </button>
+  <a href="/" class="brand"><span class="brand-icon">N<span class="brand-period">.</span></span><span>NumLearn<small>MÉTODOS NUMÉRICOS</small></span></a>
+  <div class="sidebar-course"><span class="eyebrow">{% if is_linear_module %}MÓDULO 02{% elif errors_focus %}TEMA DE ESTUDIO{% else %}MÓDULO 01{% endif %}</span><strong>{% if is_linear_module %}Sistemas lineales{% elif errors_focus %}Errores numéricos{% else %}Raíces y errores{% endif %}</strong></div>
+  <nav class="primary-learning" aria-label="Secciones principales">
+    <a href="/" {% if learning_section == 'home' %}aria-current="page"{% endif %}><span aria-hidden="true">⌂</span> Inicio</a>
+    {% if is_linear_module %}
+    <a href="{% url 'theory-hub' %}" {% if request.path == '/teoria/' or topic == 'formulacion' %}aria-current="page"{% endif %}><span aria-hidden="true">01</span> Teoría</a>
+    <a href="/sistemas-lineales/eliminacion-gaussiana/" {% if topic == 'eliminacion-gaussiana' or topic == 'gauss-seidel' %}aria-current="page"{% endif %}><span aria-hidden="true">02</span> Laboratorio</a>
+    <a href="/sistemas-lineales/comparacion-metodos/" {% if topic == 'comparacion-metodos' %}aria-current="page"{% endif %}><span aria-hidden="true">03</span> Comparación</a>
+    <a href="{% url 'assessment:page' %}?alcance=modulo-2" {% if learning_section == 'assessment' %}aria-current="page"{% endif %}><span aria-hidden="true">04</span> Autoevaluación</a>
+    {% else %}
+    <a href="{% url 'theory-hub' %}" {% if learning_section == 'theory' %}aria-current="page"{% endif %}><span aria-hidden="true">01</span> Teoría</a>
+    <a href="{% url 'nonlinear:practice' %}" {% if learning_section == 'practice' %}aria-current="page"{% endif %}><span aria-hidden="true">02</span> Práctica guiada</a>
+    <a href="{% url 'nonlinear:assessment' %}" {% if learning_section == 'assessment' %}aria-current="page"{% endif %}><span aria-hidden="true">03</span> Autoevaluación</a>
+    {% endif %}
+    <a href="{% url 'resources' %}" {% if learning_section == 'resources' %}aria-current="page"{% endif %}><span aria-hidden="true">↗</span> Recursos</a>
+  </nav>
+  <div class="sidebar-modules"><span class="nav-section">OTROS RECORRIDOS</span><a href="/ecuaciones-no-lineales/teoria/?vista=modulo">Otros temas <span aria-hidden="true">↗</span></a><a href="{% if is_linear_module %}/ecuaciones-no-lineales/teoria/{% else %}/sistemas-lineales/{% endif %}">{% if is_linear_module %}Raíces y errores{% else %}Sistemas lineales{% endif %} <span aria-hidden="true">↗</span></a><a href="/#modules">Programa del curso</a></div>
+  <div class="sidebar-foot">Ingeniería de Sistemas · UNSA</div>
+</aside>

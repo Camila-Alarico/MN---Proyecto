@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block title %}Sistemas de ecuaciones lineales · NumLearn{% endblock %}
+{% block content %}
+<div class="breadcrumb-line">Inicio / Módulo 2</div>
+<section class="page-hero"><span class="eyebrow">MÓDULO 02 · LABORATORIO INTERACTIVO</span><h1>Sistemas de ecuaciones lineales</h1><p>Cuatro pasos: formula A·x = b, resuélvelo con un método directo y con uno iterativo, y compara ambos mediante el residuo. Cada método trae un ejercicio resuelto sobre el caso base.</p>
+  <div class="learning-progress"><div class="progress-caption"><strong>Tu avance</strong><span>{{ linear_completed_count }} de {{ linear_route|length }} pasos</span></div></div></section>
+<div class="section-heading"><div><h2>Ruta del módulo</h2><p>El método concreto se elige dentro del laboratorio.</p></div></div>
+<ol class="route-list">{% for item in linear_route %}<li class="panel route-step{% if item.completed %} is-complete{% endif %}"><span class="step-index">{% if item.completed %}✓{% else %}{{ forloop.counter|stringformat:'02d' }}{% endif %}</span><div class="route-copy"><h3><a href="{% url 'linear:page' item.slug %}">{{ item.title }}</a></h3><p>{{ item.summary }}</p>{% if item.family %}<p class="route-methods">{% for m in item.family.methods %}<a href="{% url 'linear:page' m.slug %}">{{ m.title }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}</div><a href="{% url 'linear:page' item.slug %}" class="card-link">{% if item.completed %}Repasar{% else %}Empezar{% endif %} <i class="bi bi-arrow-right"></i></a></li>{% endfor %}</ol>
+{% endblock %}

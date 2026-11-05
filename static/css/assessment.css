@@ -1,0 +1,57 @@
+/* Autoevaluación y panel docente. Reutiliza las variables de app.css. */
+.scope-grid{border:0;padding:0;margin:14px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.scope-option{display:flex;gap:10px;align-items:flex-start;margin:0;padding:14px;border:1px solid var(--border);border-radius:12px;background:#fff;font-weight:400;cursor:pointer}
+.scope-option:has(input:checked){border-color:var(--primary);box-shadow:0 0 0 2px #6455d933}
+.scope-option strong{display:block;font-size:13px}.scope-option small{display:block;color:var(--muted);font-size:12px;margin:3px 0}.scope-option em{font-style:normal;font-size:11px;color:#58657c}
+.assess-mix{list-style:none;padding:0;margin:8px 0 16px;display:grid;gap:6px;font-size:13px;color:var(--muted)}.assess-mix strong{color:var(--ink);margin-right:6px}
+.assess-name{max-width:420px;margin:0 0 14px}
+.assess-notice{background:#fff7e6;border:1px solid #f0d9a8;border-radius:9px;padding:12px 14px;font-size:12px;color:#6b4a12}
+.assessment-away-notice{background:#fff1f1;border-color:#e3a6ad;color:#8c2432}
+.assessment-return-notice{background:#eef5ff;border-color:#c6d6f4;color:#425b83}
+.assessment-intro>h2{margin:5px 0 6px;font-size:21px}
+.assessment-intro>p:not(.assess-notice){max-width:760px;margin:0 0 12px}
+.assess-card .multi-options{border:0;padding:0;margin:14px 0;display:grid;gap:8px}
+.assess-card .multi-options label{display:flex;gap:10px;align-items:flex-start;margin:0;padding:11px 12px;border:1px solid var(--border);border-radius:10px;font-weight:400;font-size:14px;background:#fff}
+.assess-card .multi-options label.is-right{border-color:#2f8f6a;background:#e9f6f0}
+.assess-card .multi-options label.is-wrong{border-color:#c0566a;background:#fbecef}
+.assess-card .multi-options label.is-missed{border-color:#2f8f6a;border-style:dashed}
+.assess-card .option-mark{margin-left:auto;font-size:11px;font-weight:700;white-space:nowrap}
+.assess-card textarea{min-height:170px;resize:vertical}
+.assess-count{font-size:11px;color:#58657c;margin-top:6px}
+.assess-given{background:#f7f6fc;border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:12px 0;list-style:none;display:grid;gap:4px;font-family:'DM Sans',system-ui,sans-serif}
+.stepper{list-style:none;padding:0;margin:16px 0;display:grid;gap:10px;counter-reset:none}
+.stepper li{border:1px solid var(--border);border-radius:11px;padding:12px 14px;background:#fff}
+.stepper .step-label-line{display:flex;gap:10px;align-items:baseline;font-size:12px;font-weight:700;color:#58657c}
+.stepper .step-prompt{margin:6px 0;color:var(--ink);font-size:14px}
+.stepper .is-done{background:#e9f6f0;border-color:#9fd3bd}
+.stepper .is-done .step-value{font-weight:700;color:#17694d}
+.stepper .is-current{border-color:var(--primary);box-shadow:0 0 0 2px #6455d933}
+.stepper .is-locked{background:#f3f4f8;color:#7b8499;border-style:dashed}
+.stepper .step-fields{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:8px}
+.stepper .step-fields input[type=text]{max-width:210px}
+.stepper .step-choices{display:flex;gap:14px;flex-wrap:wrap}
+.stepper .step-choices label{margin:0;font-weight:500;font-size:13px}
+.assess-banner{background:#fff1f1;border:1px solid #e3a6ad;color:#8c2432;border-radius:9px;padding:10px 14px;margin:0 0 14px;font-size:13px}
+.assess-detail{margin:12px 0 0;padding:12px 14px;border-radius:10px;background:#f7f6fc;font-size:13px}
+.assess-detail ul{margin:6px 0 0;padding-left:20px}.assess-detail li.hit::marker{content:'✓ '}.assess-detail li.miss::marker{content:'✗ '}
+.assess-result .assess-score{font-size:38px;font-weight:800;letter-spacing:-1px;margin:6px 0}
+.assess-review{display:grid;gap:8px;margin:16px 0}
+.assess-review details{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#fff}
+/* Panel docente */
+.teacher-filters{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}.teacher-filters label{margin:0}
+.flag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.flag-bajo{background:#e7f6ef;color:#17694d}.flag-medio{background:#fff2d9;color:#76501b}.flag-alto{background:#fbe3e6;color:#9c2d3b}
+.teacher-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.teacher-metrics div{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px}.teacher-metrics strong{display:block;font-size:22px}.teacher-metrics span{font-size:11px;color:#58657c}
+.teacher-open{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f6fc;border-radius:8px;padding:10px 12px;font-size:13px;margin:6px 0}
+.teacher-review-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.teacher-review-form select{width:auto}
+
+.assess-bank{margin:6px 0 14px;border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:#fff;font-size:13px}
+.assess-bank summary{cursor:pointer;font-weight:700}
+.assess-outline{list-style:none;padding:0;margin:10px 0;display:grid;gap:6px}.assess-outline ul{margin:4px 0 0;padding-left:20px;color:var(--muted)}
+.assess-outline span{color:#58657c;font-size:12px;margin-left:6px}
+.review-item{border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:#fff;margin:12px 0}
+.review-item h3{font-size:16px;margin:4px 0 8px}
+.review-item .review-opt{display:flex;gap:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);margin:5px 0;font-size:13px}
+.review-opt.is-right{background:#e9f6f0;border-color:#9fd3bd}.review-opt.is-wrong{background:#fbecef;border-color:#e3a6ad}.review-opt.is-missed{border-style:dashed;border-color:#2f8f6a}
+.review-answer{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f6fc;border-radius:8px;padding:10px 12px;font-size:13px}

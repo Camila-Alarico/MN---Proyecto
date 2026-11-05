@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Teoría del curso · NumLearn{% endblock %}
+{% block content %}
+<div class="breadcrumb-line">Inicio / Teoría</div>
+<header class="study-heading"><span class="eyebrow">CURSO / TEORÍA</span><h1>Teoría del curso</h1><p>Elige un módulo y, dentro de él, un tema. Cada lectura incluye un ejemplo resuelto y una forma de ponerlo a prueba.</p></header>
+<section class="theory-hub" aria-labelledby="hub-m1">
+  <div class="section-heading"><div><span class="eyebrow">MÓDULO 01</span><h2 id="hub-m1">Ecuaciones no lineales y errores</h2></div><a class="btn btn-light" href="{% url 'nonlinear:theory' %}?vista=modulo">Índice del módulo →</a></div>
+  <div class="study-topic-list">{% for item in route_topics %}<article class="study-topic"><span class="topic-number">{{ forloop.counter|stringformat:'02d' }}</span><div><h3>{{ item.title }}</h3><p>{{ item.summary }}</p></div><a class="btn btn-light" href="{% url 'nonlinear:page' item.slug %}" aria-label="Abrir {{ item.title }}">Abrir <span aria-hidden="true">↗</span></a></article>{% endfor %}</div>
+</section>
+<section class="theory-hub" aria-labelledby="hub-m2">
+  <div class="section-heading"><div><span class="eyebrow">MÓDULO 02</span><h2 id="hub-m2">Sistemas de ecuaciones lineales</h2></div><a class="btn btn-light" href="{% url 'linear:landing' %}">Índice del módulo →</a></div>
+  <div class="study-topic-list">{% for item in linear_route %}<article class="study-topic"><span class="topic-number">{{ forloop.counter|stringformat:'02d' }}</span><div><h3>{{ item.title }}</h3><p>{{ item.summary }}</p></div><a class="btn btn-light" href="{% url 'linear:page' item.slug %}" aria-label="Abrir {{ item.title }}">Abrir <span aria-hidden="true">↗</span></a></article>{% endfor %}</div>
+</section>
+<div class="study-next"><div><span class="eyebrow">DE LA IDEA A LA PRUEBA</span><h2>Comprueba lo que entendiste</h2><p>La autoevaluación mezcla selección múltiple, respuesta abierta y problemas paso a paso.</p></div><a class="btn btn-primary" href="{% url 'assessment:page' %}">Ir a la autoevaluación →</a></div>
+{% endblock %}

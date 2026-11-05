@@ -1,0 +1,35 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}{{ method.title }} · {{ family.title }} · NumLearn{% endblock %}
+{% block scripts %}<link href="{% static 'css/linear.css' %}" rel="stylesheet"><script type="module" src="{% static 'js/linear/lab.js' %}"></script>{% endblock %}
+{% block content %}
+<div class="breadcrumb-line"><a href="{% url 'linear:landing' %}">Módulo 2</a> / {{ family.title }} / {{ method.title }}</div>
+<header class="method-header">
+  <div><span class="eyebrow">{{ family.title|upper }} · PASO {{ route_position|stringformat:'02d' }}</span><h1>{{ method.title }}</h1><p>{{ method.description }}</p></div>
+
+</header>
+{% include 'components/linear_tabs.html' %}
+{# El método se elige aquí; cambiarlo lleva a su URL canónica conservando la matriz y el vector (lab.js). #}
+<div class="panel method-picker" data-method-panel="laboratory">
+  <label for="method-select">Método</label>
+  <select id="method-select" aria-describedby="method-family-help" data-testid="method-select">
+    {% for group in families %}<optgroup label="{{ group.title }}">{% for m in group.methods %}<option value="{{ m.slug }}" {% if m.key == method_key %}selected{% endif %}>{{ m.title }}</option>{% endfor %}</optgroup>{% endfor %}
+  </select>
+  <small class="input-help" id="method-family-help">{{ family.description }}</small>
+</div>
+<div data-method-panel="laboratory">{% include 'components/linear_lab.html' with mode=method_key %}</div>
+{% include 'components/worked_example.html' %}
+<div id="theory" class="theory-grid" data-method-panel="theory">
+  <section class="panel"><span class="eyebrow">EL FUNDAMENTO</span><h3>Fórmula utilizada</h3><div class="formula">\[{{ method.formula }}\]</div></section>
+  <section class="panel">
+    <span class="eyebrow">CUÁNDO DETENERSE / ADVERTIR</span>
+    {% if method_key == 'gauss' %}
+    <h3>Criterio de pivote problemático</h3>
+    <p>Un pivote es problemático si |pivote| &lt; ε·max|aᵢⱼ| (máximo sobre la matriz original). Con ε = 10⁻¹² el sistema se declara singular y no se calcula solución; con ε = 10⁻⁶ se avisa de un pivote pequeño.</p>
+    {% else %}
+    <h3>Criterio de parada</h3>
+    <p>Se detiene cuando el paso ‖xᵏ − xᵏ⁻¹‖∞ y el residuo ‖b − A·xᵏ‖∞ son ≤ tolerancia, o al llegar al máximo de iteraciones. Si las componentes superan 10¹², se declara divergencia.</p>
+    {% endif %}
+  </section>
+  <section class="panel"><span class="eyebrow">PARA EXPLORAR</span><h3>Consejos del método</h3><p>{{ method.tip }}</p></section>
+</div>
+{% endblock %}

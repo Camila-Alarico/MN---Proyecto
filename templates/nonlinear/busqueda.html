@@ -1,0 +1,40 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}Búsqueda gráfica de raíces · NumLearn{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'js/nonlinear/graph-search.js' %}"></script>{% endblock %}
+{% block content %}
+<header class="method-header"><div><span class="eyebrow">OBSERVA ANTES DE CALCULAR</span><h1>Búsqueda gráfica de raíces</h1><p>Explora una función, distingue cruces y contactos, y elige qué intervalo investigar.</p></div></header>
+{% include 'components/alert.html' %}
+<div class="search-workspace">
+  <section class="panel control-card" aria-labelledby="search-controls-title">
+    <span class="eyebrow">01 / CONFIGURAR</span><h2 id="search-controls-title">Función e intervalo</h2>
+    <label for="graph-example">Ejemplo de partida</label>
+    <select id="graph-example">
+      <option value="cubic" data-hint="x³ − x − 2 · un intervalo candidato">Raíz simple</option>
+      <option value="double" data-hint="x² · contacto con el eje sin cambio de signo">Raíz doble</option>
+      <option value="pole" data-hint="1/x · signos distintos no bastan si falta continuidad">Discontinuidad</option>
+      <option value="custom">Mi configuración</option>
+    </select>
+    <form id="graph-form">
+      <label for="expression">Función f(x)</label><input id="expression" name="expression" value="x^3-x-2" maxlength="200" required aria-describedby="expression-help">
+      <p class="control-hint" id="expression-help">Usa x, potencias como x^2 y funciones como sin(x), exp(x) o sqrt(x).</p>
+      <div class="parameter-grid"><div><label for="a">X mínimo</label><input id="a" name="a" type="number" step="any" min="-1e12" max="1e12" value="-2" required></div><div><label for="b">X máximo</label><input id="b" name="b" type="number" step="any" min="-1e12" max="1e12" value="3" required></div></div>
+      <button type="submit" class="btn btn-primary">Explorar función</button>
+    </form>
+    <div class="lesson-note"><strong>Un intervalo es un candidato</strong><p>Antes de usar Bisección, comprueba que la función sea continua en él. Un contacto puede ser raíz aunque no cambie el signo.</p></div>
+    <a class="text-link" href="/ecuaciones-no-lineales/polinomios/">Repasar raíces múltiples →</a>
+  </section>
+  <section class="panel search-stage" aria-labelledby="search-chart-title">
+    <div class="panel-heading"><h2 id="search-chart-title">02 / Observar la función</h2><span class="status" id="graph-state" aria-live="polite">Preparando ejemplo</span></div>
+    <div class="formula" id="graph-formula">La fórmula aparecerá al explorar.</div>
+    <div class="plot" id="search-plot" role="region" aria-label="Función muestreada y puntos con valor cero"></div>
+    <p class="chart-reading">Arrastra para ampliar una zona. Haz doble clic para recuperar el rango calculado; editar los límites y explorar cambia el muestreo.</p>
+  </section>
+</div>
+<section id="graph-results" class="panel search-findings" aria-labelledby="graph-results-title" hidden>
+  <span class="eyebrow">03 / INTERPRETAR</span><h2 id="graph-results-title">Qué encontró el muestreo</h2>
+  <dl class="search-metrics"><div><dt>Cambios de signo estrictos</dt><dd id="graph-interval-count">—</dd></div><div><dt>Puntos con valor cero</dt><dd id="graph-zero-count">—</dd></div><div><dt>Puntos evaluados</dt><dd id="graph-sample-count">—</dd></div></dl>
+  <p id="graph-zero-values"></p>
+  <ul id="graph-candidates" class="search-candidates" aria-label="Intervalos candidatos para Bisección"></ul>
+</section>
+<p class="search-message" id="graph-message" aria-live="polite"></p>
+{% endblock %}

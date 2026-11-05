@@ -1,0 +1,17 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}Comparación directo vs. iterativo · NumLearn{% endblock %}
+{% block scripts %}<link href="{% static 'css/linear.css' %}" rel="stylesheet"><script type="module" src="{% static 'js/linear/lab.js' %}"></script>{% endblock %}
+{% block content %}
+<div class="breadcrumb-line"><a href="{% url 'linear:landing' %}">Módulo 2</a> / Comparación</div>
+<header class="method-header">
+  <div><span class="eyebrow">DIRECTO VS. ITERATIVO</span><h1>Eliminación gaussiana frente a Gauss-Seidel</h1><p>Resuelve el mismo sistema con ambos métodos y contrasta solución, residuo y procedimiento.</p></div>
+
+</header>
+{% include 'components/linear_lab.html' with mode='compare' %}
+<section class="panel">
+  <span class="eyebrow">CÓMO LEER LA COMPARACIÓN</span>
+  <h3>El residuo mide cuánto falla cada ecuación</h3>
+  <p>El residuo r = b − A·x mide cuánto se incumple el sistema; no es el error real |x − x*|. Con matrices mal condicionadas un residuo pequeño puede acompañar un error grande. El método directo da su resultado tras un número fijo de operaciones; Gauss-Seidel mejora el residuo en cada iteración, pero solo si converge.</p>
+  <p>Prueba el ejemplo «Mismas ecuaciones, otro orden»: el pivoteo parcial lo resuelve con un intercambio de filas, mientras que Gauss-Seidel diverge porque ese orden pierde la dominancia diagonal.</p>
+</section>
+{% endblock %}

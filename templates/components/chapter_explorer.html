@@ -1,0 +1,50 @@
+<section class="chapter-explorer" aria-label="Explora los tres temas de estudio" data-chapter-explorer>
+  <div class="chapter-masthead"><span>EL LABORATORIO / TRES FORMAS DE EXPLORAR</span><span class="chapter-position" aria-hidden="true">01 — 03</span></div>
+  <nav class="chapter-tabs" aria-label="Elegir tema de estudio">
+    <a id="chapter-tab-errors" href="#chapter-errors"><span>01</span><div>Errores numéricos<small>Medir una aproximación</small></div><span class="chapter-tab-arrow" aria-hidden="true">↗</span></a>
+    <a id="chapter-tab-roots" href="#chapter-roots"><span>02</span><div>Raíces no lineales<small>Seguir la convergencia</small></div><span class="chapter-tab-arrow" aria-hidden="true">↗</span></a>
+    <a id="chapter-tab-polynomials" href="#chapter-polynomials"><span>03</span><div>Raíces de polinomios<small>Reconocer la multiplicidad</small></div><span class="chapter-tab-arrow" aria-hidden="true">↗</span></a>
+  </nav>
+  <div class="chapter-panels">
+    <section id="chapter-errors" class="chapter-panel" aria-labelledby="chapter-errors-title">
+      <div class="chapter-copy">
+        <span class="chapter-kicker">01 / ERRORES NUMÉRICOS</span>
+        <h2 id="chapter-errors-title">Un número.<br>¿Cuánta <em>confianza?</em></h2>
+        <p>La cantidad de decimales no cuenta toda la historia. Mide la distancia entre una aproximación y su referencia.</p>
+        <a class="chapter-action" href="/ecuaciones-no-lineales/errores/">Explorar el error <span aria-hidden="true">↗</span></a>
+      </div>
+      <figure class="chapter-figure">
+        <div class="chapter-chart-label"><span>01.A / DISTANCIA ABSOLUTA</span><span>v = 10</span></div>
+        {% include 'components/error_preview.html' %}
+        <figcaption><strong>0.2 de diferencia. 2% de error.</strong> Mostrar 9.800000 no acerca el resultado a 10.</figcaption>
+      </figure>
+    </section>
+    <section id="chapter-roots" class="chapter-panel" aria-labelledby="chapter-roots-title">
+      <div class="chapter-copy">
+        <span class="chapter-kicker">02 / ECUACIONES NO LINEALES</span>
+        <h2 id="chapter-roots-title">Acercarse.<br>Y saber <em>por qué.</em></h2>
+        <p>Bisección reduce un intervalo. Newton sigue una tangente. Compara sus pasos y descubre qué permite aceptar una raíz.</p>
+        <a class="chapter-action" href="/ecuaciones-no-lineales/comparar/">Comparar los métodos <span aria-hidden="true">↗</span></a>
+        <a class="chapter-secondary" href="/ecuaciones-no-lineales/conceptos/">Entender el fundamento →</a>
+      </div>
+      <figure class="chapter-figure">
+        <div class="chapter-chart-label"><span>02.A / PRIMERA TANGENTE</span><span>x₀ = 1.5</span></div>
+        {% include 'components/reference_plot.html' %}
+        <figcaption><strong>La tangente propone el siguiente punto.</strong> Para x³ − x − 2, contrasta Newton desde 1.5 y Bisección en [1, 2].</figcaption>
+      </figure>
+    </section>
+    <section id="chapter-polynomials" class="chapter-panel" aria-labelledby="chapter-polynomials-title">
+      <div class="chapter-copy">
+        <span class="chapter-kicker">03 / RAÍCES DE POLINOMIOS</span>
+        <h2 id="chapter-polynomials-title">No todas<br>las raíces <em>cruzan.</em></h2>
+        <p>Una raíz simple atraviesa el eje. Una raíz doble lo toca. Esa diferencia cambia lo que detecta Bisección y cómo avanza Newton.</p>
+        <a class="chapter-action" href="/ecuaciones-no-lineales/polinomios/">Explorar la multiplicidad <span aria-hidden="true">↗</span></a>
+      </div>
+      <figure class="chapter-figure">
+        <div class="chapter-chart-label"><span>03.A / CRUCE Y CONTACTO</span><span>p(x) = (x − 1)²(x + 2)</span></div>
+        {% include 'components/polynomial_preview.html' %}
+        <figcaption><strong>−2 es simple. 1 es doble.</strong> Cerca de 1 no cambia el signo: un intervalo con extremos del mismo signo puede contener una raíz.</figcaption>
+      </figure>
+    </section>
+  </div>
+</section>

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Mis apuntes · NumLearn{% endblock %}
+{% block content %}
+<header class="method-header">
+  <div><span class="eyebrow">CUADERNO PERSONAL</span><h1>Mis apuntes</h1></div>
+</header>
+<div class="two-columns">
+  <section class="panel" aria-labelledby="note-heading">
+    <h2 id="note-heading">Conserva una idea</h2>
+    <form method="post">
+      {% csrf_token %}
+      <label for="note">¿Qué descubriste hoy?</label>
+      <textarea id="note" name="text" maxlength="5000" rows="7" required></textarea>
+      <small class="input-help">Máximo 5000 caracteres.</small>
+      <button class="btn btn-primary">Guardar apunte</button>
+    </form>
+  </section>
+  <div>
+    {% for note in notes %}
+    <article class="panel note-card">
+      <div class="note-meta">
+        <small>{{ note.updated_at|date:'d/m/Y H:i' }}</small>
+        <form method="post" action="{% url 'delete-note' note.pk %}" onsubmit="return confirm('¿Eliminar este apunte?')">
+          {% csrf_token %}
+          <button class="btn btn-light btn-icon" aria-label="Eliminar apunte"><i class="bi bi-trash" aria-hidden="true"></i></button>
+        </form>
+      </div>
+      <p class="note-text">{{ note.text }}</p>
+    </article>
+    {% empty %}
+    <p class="empty-state">Aún no tienes apuntes.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

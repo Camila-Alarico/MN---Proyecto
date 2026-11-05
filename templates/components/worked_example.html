@@ -1,0 +1,24 @@
+{# Ejercicio resuelto del método actual (ver WORKED_EXAMPLES en el catalog.py de cada módulo). Valores calculados a mano, reproducibles en el simulador. #}
+{% with ex=worked_example %}
+<section class="panel worked-example" id="ejercicio-resuelto" data-method-panel="example" aria-labelledby="worked-title">
+  <span class="eyebrow">EJERCICIO RESUELTO</span>
+  <h2 id="worked-title">{{ ex.title }}</h2>
+  <p>{{ ex.statement }}</p>
+  <div class="formula">\[{{ ex.setup_tex }}\]</div>
+  {% include 'components/theory_animation.html' with scene=method_key hint='Sigue la resolución en la gráfica: la lista de pasos y la fila de la tabla se resaltan a la vez.' %}
+  <div class="worked-grid">
+    <ol class="worked-list">
+      {% for label, text in ex.steps %}<li><strong>{{ label }}</strong> <span>{{ text }}</span></li>{% endfor %}
+    </ol>
+    <div class="table-scroll">
+      <table class="table">
+        <caption>Valores redondeados a seis decimales</caption>
+        <thead><tr>{% for header in ex.columns %}<th scope="col">{{ header }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for row in ex.rows %}<tr>{% for value in row %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </div>
+  <div class="lesson-note"><strong>Qué aprender de este ejercicio</strong><p>{{ ex.conclusion }}</p></div>
+  <p class="worked-actions"><a class="btn btn-primary" href="{{ ex.url }}" data-testid="worked-example-reproduce">Reproducir en el simulador <i class="bi bi-play-fill"></i></a> <span class="input-help">Carga estos datos y avanza paso a paso para comparar con la tabla.</span></p>
+</section>
+{% endwith %}

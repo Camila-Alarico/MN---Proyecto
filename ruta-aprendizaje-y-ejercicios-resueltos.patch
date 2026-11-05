@@ -1,0 +1,898 @@
+From bdd004e15d5fcfa6cfeb4aadb46ca4153210b883 Mon Sep 17 00:00:00 2001
+From: NumLearn <numlearn@local>
+Date: Thu, 22 Oct 2026 19:37:18 +0000
+Subject: [PATCH] =?UTF-8?q?Ruta=20de=20aprendizaje=20por=20familias=20de?=
+ =?UTF-8?q?=20m=C3=A9todos,=20selector=20de=20m=C3=A9todo=20y=20ejercicios?=
+ =?UTF-8?q?=20resueltos?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Módulo 1: la barra lateral pasa de 11 contenidos a una ruta de 6 pasos
+  (Errores → Raíces de ecuaciones → Métodos cerrados → Métodos abiertos →
+  Raíces múltiples de polinomios → Comparar métodos); la búsqueda gráfica
+  queda como herramienta.
+- Módulo 2: ruta de 4 pasos con Métodos directos (Gauss) y Métodos
+  iterativos (Gauss-Seidel).
+- Selector de método agrupado por familia dentro de cada simulador; cambiar
+  de método lleva a su URL canónica conservando los datos.
+- Ejercicio resuelto por método (valores a 6 decimales) con botón para
+  reproducirlo en el simulador.
+- Progreso del módulo medido sobre la ruta; un paso con familia se completa
+  al terminar cualquiera de sus métodos.
+- Todas las URL, el historial, el progreso y las pruebas existentes se
+  mantienen; se añaden 6 pruebas.
+---
+ README.md                                    |  12 ++
+ core/context_processors.py                   |  29 ++-
+ core/tests.py                                |  52 +++++
+ linear/catalog.py                            |  93 ++++++++-
+ linear/views.py                              |   9 +-
+ nonlinear/catalog.py                         | 199 ++++++++++++++++++-
+ nonlinear/views.py                           |  21 +-
+ static/css/lessons.css                       |  33 +++
+ static/js/linear/lab.js                      |  13 ++
+ static/js/nonlinear/simulator.js             |  15 ++
+ templates/components/linear_tabs.html        |   2 +-
+ templates/components/method_tabs.html        |   2 +-
+ templates/components/progress_indicator.html |   2 +-
+ templates/components/sidebar.html            |  16 +-
+ templates/components/worked_example.html     |  23 +++
+ templates/linear/landing.html                |   8 +-
+ templates/linear/simulator.html              |  15 +-
+ templates/nonlinear/landing.html             |   8 +-
+ templates/nonlinear/simulator.html           |  16 +-
+ 19 files changed, 526 insertions(+), 42 deletions(-)
+ create mode 100644 templates/components/worked_example.html
+
+diff --git a/README.md b/README.md
+index a669a5b..ced1600 100644
+--- a/README.md
++++ b/README.md
+@@ -177,6 +177,18 @@ Consulta [arquitectura](docs/ARCHITECTURE.md) para ampliar la plataforma y
+ - POST `/api/nonlinear/bisection/`, `newton/`, `false-position/`, `fixed-point/`,
+   `secant/`, `multiple-roots/`; auxiliares en la documentación de API.
+ 
++## Ruta de aprendizaje
++
++La barra lateral ya no lista los once contenidos del módulo 1: muestra una **ruta de seis pasos**
++(Errores → Raíces de ecuaciones → Métodos cerrados → Métodos abiertos → Raíces múltiples de
++polinomios → Comparar métodos) y la búsqueda gráfica como herramienta. El módulo 2 sigue la misma
++idea en cuatro pasos (Formulación → Métodos directos → Métodos iterativos → Comparar). Dentro de
++cada simulador un selector agrupado por familia (cerrados/abiertos, directos/iterativos) permite
++cambiar de método conservando los datos; todas las URL canónicas, el historial y el progreso se
++mantienen. Cada método incluye un **ejercicio resuelto** con valores a seis decimales y un botón
++para reproducirlo en el simulador (`ROUTE`, `FAMILIES` y `WORKED_EXAMPLES` en `nonlinear/catalog.py`
++y `linear/catalog.py`).
++
+ ## Uso del laboratorio
+ 
+ Ejecutar muestra todo el cálculo. Siguiente iteración empieza por la primera fila
+diff --git a/core/context_processors.py b/core/context_processors.py
+index 75808ea..9dc540f 100644
+--- a/core/context_processors.py
++++ b/core/context_processors.py
+@@ -1,12 +1,22 @@
+ from django.urls import reverse
+ 
+-from linear.catalog import TOPIC_SLUGS as LINEAR_SLUGS, TOPICS as LINEAR_TOPICS
+-from nonlinear.catalog import METHODS, TOPIC_SLUGS, TOPICS
++from linear.catalog import (FAMILIES as LINEAR_FAMILIES, ROUTE as LINEAR_ROUTE, TOPIC_SLUGS as LINEAR_SLUGS,
++                            TOPICS as LINEAR_TOPICS)
++from nonlinear.catalog import FAMILIES, METHODS, ROUTE, TOOL_SLUGS, TOPIC_SLUGS, TOPICS
+ 
+ from .catalog import AVAILABLE_MODULES, MODULES
+ from .models import UserProgress
+ 
+ 
++def _route(route, completed, families):
++    """Pasos de una ruta con su estado. Un paso con familia se completa al terminar cualquiera de sus métodos."""
++    return [
++        {**step, 'family': families.get(step.get('family')),
++         'completed': any(slug in completed for slug in step['slugs'])}
++        for step in route
++    ]
++
++
+ def navigation(request):
+     if request.user.is_authenticated:
+         completed = set(
+@@ -44,12 +54,23 @@ def navigation(request):
+          'completed': slug in linear_done}
+         for slug, title, icon, description, difficulty in LINEAR_TOPICS
+     ]
++
++    # Rutas por módulo: lo que ve el estudiante en la barra lateral y en la portada de cada módulo.
++    route_topics = _route(ROUTE, completed, FAMILIES)
++    linear_route = _route(LINEAR_ROUTE, linear_done, LINEAR_FAMILIES)
++    route_completed_count = sum(1 for step in route_topics if step['completed'])
++    linear_completed_count = sum(1 for step in linear_route if step['completed'])
++
+     return {
+         'linear_topics': linear_topics,
+-        'linear_completed_count': len(linear_done),
++        'linear_route': linear_route,
++        'linear_completed_count': linear_completed_count,
+         'learning_topics': topics,
++        'route_topics': route_topics,
++        'tool_topics': [topic for topic in topics if topic['slug'] in TOOL_SLUGS],
+         'completed_count': len(completed),
+-        'module_progress': round(len(completed) / len(TOPICS) * 100),
++        'route_completed_count': route_completed_count,
++        'module_progress': round(route_completed_count / len(ROUTE) * 100),
+         'course_modules': MODULES,
+         'available_modules': AVAILABLE_MODULES,
+         # URL canónica de cada simulador; JS y plantillas la usan en vez de rutas escritas a mano.
+diff --git a/core/tests.py b/core/tests.py
+index 4d75924..d79c956 100644
+--- a/core/tests.py
++++ b/core/tests.py
+@@ -305,3 +305,55 @@ class ComparisonTests(TestCase):
+             content_type='application/json',
+         )
+         self.assertEqual(response.status_code, 400)
++
++
++class LearningRouteTests(TestCase):
++    """La barra lateral muestra una ruta corta por módulo; los métodos se eligen dentro del simulador."""
++
++    def test_module_one_route_has_six_steps_and_hides_individual_methods(self):
++        response = self.client.get('/')
++        for title in ('Errores numéricos', 'Raíces de ecuaciones', 'Métodos cerrados', 'Métodos abiertos',
++                      'Raíces múltiples de polinomios', 'Comparar métodos'):
++            self.assertContains(response, title)
++        sidebar = response.content.decode().split('<aside', 1)[1].split('</aside>', 1)[0]
++        for hidden in ('>Regla falsa', '>Punto fijo', '>Secante', '>Newton-Raphson', '>Bisección'):
++            self.assertNotIn(hidden, sidebar)
++        self.assertContains(response, 'href="/ecuaciones-no-lineales/biseccion/"')
++        self.assertContains(response, 'href="/ecuaciones-no-lineales/newton/"')
++        self.assertContains(response, 'de 6 pasos completados')
++
++    def test_module_two_route_groups_direct_and_iterative(self):
++        response = self.client.get('/')
++        self.assertContains(response, 'Métodos directos')
++        self.assertContains(response, 'Métodos iterativos')
++        self.assertContains(response, 'href="/sistemas-lineales/gauss-seidel/"')
++
++    def test_every_method_page_offers_a_selector_grouped_by_family(self):
++        for path, options in (('/ecuaciones-no-lineales/regla-falsa/', ('Métodos cerrados', 'Métodos abiertos')),
++                              ('/sistemas-lineales/gauss-seidel/', ('Métodos directos', 'Métodos iterativos'))):
++            response = self.client.get(path)
++            self.assertContains(response, 'id="method-select"')
++            for label in options:
++                self.assertContains(response, f'<optgroup label="{label}">')
++        self.assertContains(self.client.get('/ecuaciones-no-lineales/secante/'), 'value="secant" selected')
++        self.assertContains(self.client.get('/sistemas-lineales/gauss-seidel/'), 'value="gauss-seidel" selected')
++
++    def test_family_step_is_current_for_every_method_of_the_family(self):
++        response = self.client.get('/ecuaciones-no-lineales/secante/')
++        sidebar = response.content.decode().split('<aside', 1)[1].split('</aside>', 1)[0]
++        self.assertRegex(sidebar, r'href="/ecuaciones-no-lineales/newton/" aria-current="page"')
++
++    def test_completing_one_method_completes_its_family_step(self):
++        self.client.post('/api/nonlinear/progress/', {'topic': 'regla-falsa'}, content_type='application/json')
++        self.assertContains(self.client.get('/'), '1 de 6 pasos completados')
++
++    def test_each_method_has_a_worked_example_that_can_be_reproduced(self):
++        from linear.catalog import METHODS as LINEAR_METHODS
++        from nonlinear.catalog import METHODS
++        for slug, prefix in ([(m['slug'], '/ecuaciones-no-lineales/') for m in METHODS.values()]
++                             + [(m['slug'], '/sistemas-lineales/') for m in LINEAR_METHODS.values()]):
++            response = self.client.get(f'{prefix}{slug}/')
++            self.assertContains(response, 'id="ejercicio-resuelto"', msg_prefix=slug)
++            self.assertContains(response, f'href="{prefix}{slug}/?', msg_prefix=slug)
++        self.assertContains(self.client.get('/ecuaciones-no-lineales/biseccion/'), '1.562500')
++        self.assertContains(self.client.get('/sistemas-lineales/gauss-seidel/'), '2.733333')
+diff --git a/linear/catalog.py b/linear/catalog.py
+index c5fe539..7bc207b 100644
+--- a/linear/catalog.py
++++ b/linear/catalog.py
+@@ -4,15 +4,19 @@ Misma forma que `nonlinear/catalog.py`: cada contenido tiene UNA URL canónica
+ `/sistemas-lineales/<slug>/`. Los enlaces se construyen con `{% url 'linear:page' slug %}`.
+ Los slugs son únicos en todo el curso (no repiten los del módulo 1) porque el progreso de invitado
+ se guarda en una sola lista de sesión.
++
++Organización pedagógica: los métodos se agrupan en dos familias (`FAMILIES`), directos e
++iterativos, y el método concreto se elige dentro del laboratorio. Cada método trae un
++ejercicio resuelto (`WORKED_EXAMPLES`) sobre el caso base.
+ """
+ METHODS = {
+     'gauss': {'slug': 'eliminacion-gaussiana', 'title': 'Eliminación gaussiana', 'icon': 'grid-3x3',
+-        'difficulty': 'Intermedio', 'parameters': [],
++        'difficulty': 'Intermedio', 'parameters': [], 'family': 'direct',
+         'description': 'Método directo: pivoteo parcial, eliminación hacia adelante y sustitución hacia atrás.',
+         'formula': r'm_{ik}=\frac{a_{ik}^{(k)}}{a_{kk}^{(k)}},\quad x_i=\frac{c_i-\sum_{j>i}u_{ij}x_j}{u_{ii}}',
+         'tip': 'Elige como pivote el elemento de mayor valor absoluto de la columna. Un pivote casi nulo indica un sistema singular o casi singular.'},
+     'seidel': {'slug': 'gauss-seidel', 'title': 'Gauss-Seidel', 'icon': 'arrow-repeat',
+-        'difficulty': 'Intermedio', 'parameters': ['tolerance', 'max_iterations'],
++        'difficulty': 'Intermedio', 'parameters': ['tolerance', 'max_iterations'], 'family': 'iterative',
+         'description': 'Método iterativo: actualiza cada incógnita con los valores más recientes.',
+         'formula': r'x_i^{(k+1)}=\frac{b_i-\sum_{j<i}a_{ij}x_j^{(k+1)}-\sum_{j>i}a_{ij}x_j^{(k)}}{a_{ii}}',
+         'tip': 'La dominancia diagonal estricta es suficiente, no necesaria, para converger. Cambiar el orden de las filas puede cambiar el resultado.'},
+@@ -36,6 +40,39 @@ HISTORY_PREFIX = 'linear-'
+ HISTORY_TITLES = {'linear-gauss': 'Sist. lineales · Gauss', 'linear-seidel': 'Sist. lineales · Seidel',
+                   'linear-compare': 'Sist. lineales · Comparación'}
+ 
++# --- Familias: el método se elige dentro del laboratorio ----------------------
++
++FAMILIES = {
++    'direct': {
++        'title': 'Métodos directos', 'default': 'gauss',
++        'description': 'Obtienen la solución exacta (salvo redondeo) en un número fijo de operaciones. '
++                       'Fallan solo si el sistema es singular.',
++    },
++    'iterative': {
++        'title': 'Métodos iterativos', 'default': 'seidel',
++        'description': 'Parten de un vector inicial y mejoran la aproximación en cada paso. '
++                       'Convergen solo bajo ciertas condiciones de la matriz y del orden de las filas.',
++    },
++}
++for _key, _method in METHODS.items():
++    FAMILIES[_method['family']].setdefault('methods', []).append({'key': _key, **_method})
++FAMILY_LIST = [{'key': key, **family} for key, family in FAMILIES.items()]
++
++# --- Ruta del módulo (barra lateral y portada) -----------------------------------
++ROUTE = [
++    {'slug': 'formulacion', 'title': 'Formulación y convergencia', 'icon': 'lightbulb',
++     'summary': 'Representar A·x = b y saber cuándo confiar en cada método.'},
++    {'slug': 'eliminacion-gaussiana', 'title': 'Métodos directos', 'icon': 'grid-3x3', 'family': 'direct',
++     'summary': 'Eliminación gaussiana con pivoteo parcial: la solución en un número fijo de pasos.'},
++    {'slug': 'gauss-seidel', 'title': 'Métodos iterativos', 'icon': 'arrow-repeat', 'family': 'iterative',
++     'summary': 'Gauss-Seidel: aproximaciones sucesivas desde el vector cero.'},
++    {'slug': 'comparacion-metodos', 'title': 'Comparar métodos', 'icon': 'bar-chart',
++     'summary': 'Directo frente a iterativo: solución, residuo y procedimiento.'},
++]
++for _step in ROUTE:
++    _family = FAMILIES.get(_step.get('family'))
++    _step['slugs'] = [m['slug'] for m in _family['methods']] if _family else [_step['slug']]
++
+ # Casos del laboratorio. `meaning` explica qué representa cada incógnita.
+ EXAMPLES = {
+     'base': {'title': 'Caso base: demanda de tres servicios', 'size': 3,
+@@ -48,3 +85,55 @@ EXAMPLES = {
+     'singular': {'title': 'Prueba de fallo: sistema singular', 'size': 2,
+                  'matrix': [[1, 2], [2, 4]], 'vector': [3, 6], 'solution': None},
+ }
++
++# --- Ejercicios resueltos (caso base, valores a seis decimales) -----------------
++
++_BASE_TEX = (r'\begin{pmatrix}4&1&1\\1&5&1\\1&1&6\end{pmatrix}'
++             r'\begin{pmatrix}x_1\\x_2\\x_3\end{pmatrix}=\begin{pmatrix}9\\14\\21\end{pmatrix}')
++_BASE_QUERY = 'matrix=%5B%5B4%2C1%2C1%5D%2C%5B1%2C5%2C1%5D%2C%5B1%2C1%2C6%5D%5D&vector=%5B9%2C14%2C21%5D'
++
++WORKED_EXAMPLES = {
++    'gauss': {
++        'title': 'Eliminación gaussiana sobre el caso base',
++        'statement': 'Resuelve el sistema de demanda de tres servicios con pivoteo parcial y sustitución hacia atrás.',
++        'setup_tex': _BASE_TEX,
++        'steps': [
++            ('Columna 1.', 'El mayor |aᵢ₁| ya está en la fila 1 (pivote 4): no hay intercambio. Multiplicadores m₂₁ = 1/4 = 0.25 y m₃₁ = 0.25. '
++                           'F2 ← F2 − 0.25·F1 = (0, 4.75, 0.75 | 11.75); F3 ← F3 − 0.25·F1 = (0, 0.75, 5.75 | 18.75).'),
++            ('Columna 2.', 'Pivote 4.75 (fila 2). m₃₂ = 0.75/4.75 = 0.157895. F3 ← F3 − 0.157895·F2 = (0, 0, 5.631579 | 16.894737).'),
++            ('Sustitución hacia atrás.', 'x₃ = 16.894737/5.631579 = 3; x₂ = (11.75 − 0.75·3)/4.75 = 2; x₁ = (9 − 2 − 3)/4 = 1.'),
++            ('Verificar.', 'Sustituye x = (1, 2, 3) en las tres ecuaciones: 9, 14 y 21. El residuo r = b − A·x es cero.'),
++        ],
++        'columns': ['Paso', 'Fila 1', 'Fila 2', 'Fila 3'],
++        'rows': [
++            ['[A | b]', '4  1  1 | 9', '1  5  1 | 14', '1  1  6 | 21'],
++            ['Tras columna 1', '4  1  1 | 9', '0  4.75  0.75 | 11.75', '0  0.75  5.75 | 18.75'],
++            ['Tras columna 2', '4  1  1 | 9', '0  4.75  0.75 | 11.75', '0  0  5.631579 | 16.894737'],
++            ['Solución', 'x₁ = 1', 'x₂ = 2', 'x₃ = 3'],
++        ],
++        'conclusion': 'Dos columnas de eliminación y tres sustituciones: el costo es fijo y conocido de antemano. Prueba el ejemplo «otro orden» para ver el intercambio de filas.',
++        'query': _BASE_QUERY,
++    },
++    'seidel': {
++        'title': 'Gauss-Seidel sobre el caso base',
++        'statement': 'Mismo sistema, partiendo de x⁽⁰⁾ = (0, 0, 0), tolerancia 10⁻⁶ y máximo 100 iteraciones.',
++        'setup_tex': _BASE_TEX + r',\qquad x_i^{(k+1)}=\frac{b_i-\sum_{j<i}a_{ij}x_j^{(k+1)}-\sum_{j>i}a_{ij}x_j^{(k)}}{a_{ii}}',
++        'steps': [
++            ('Comprobar la dominancia diagonal.', '4 > 1 + 1, 5 > 1 + 1 y 6 > 1 + 1: es estricta por filas, así que la convergencia está garantizada desde cualquier inicio.'),
++            ('Primera iteración.', 'x₁ = 9/4 = 2.25; x₂ = (14 − 2.25 − 0)/5 = 2.35 (usa el x₁ recién calculado); x₃ = (21 − 2.25 − 2.35)/6 = 2.733333.'),
++            ('Seguir hasta la tolerancia.', 'El residuo ‖b − A·x‖∞ baja de 21 a 5.08, 0.26, 0.046… En la iteración 8 paso y residuo son ≤ 10⁻⁶ y se detiene.'),
++        ],
++        'columns': ['k', 'x₁', 'x₂', 'x₃', 'Paso ‖Δx‖∞', 'Residuo ‖r‖∞'],
++        'rows': [
++            ['0', '0.000000', '0.000000', '0.000000', '—', '21.000000'],
++            ['1', '2.250000', '2.350000', '2.733333', '2.733333', '5.083333'],
++            ['2', '0.979167', '2.057500', '2.993889', '1.270833', '0.260556'],
++            ['3', '0.987153', '2.003792', '3.001509', '0.053708', '0.046088'],
++            ['4', '0.998675', '1.999963', '3.000227', '0.011522', '0.005111'],
++            ['…', '', '', '', '', ''],
++            ['8', '1.000000', '2.000000', '3.000000', '0.000001', '0.000000'],
++        ],
++        'conclusion': 'Cada iteración reduce el residuo unas diez veces. Con las filas 1 y 2 intercambiadas se pierde la dominancia y el mismo método diverge: el orden importa.',
++        'query': _BASE_QUERY,
++    },
++}
+diff --git a/linear/views.py b/linear/views.py
+index cebf617..edac5c5 100644
+--- a/linear/views.py
++++ b/linear/views.py
+@@ -8,9 +8,10 @@ from core.models import UserProgress
+ from nonlinear.models import CalculationHistory
+ from nonlinear.services.parser import MathInputError
+ from nonlinear.throttle import throttle
+-from nonlinear.views import HISTORY_LIMIT_PER_USER, json_endpoint
++from nonlinear.views import HISTORY_LIMIT_PER_USER, json_endpoint, method_context
+ 
+-from .catalog import DEFAULT_METHOD, EXAMPLES, HISTORY_PREFIX, METHOD_BY_SLUG, METHODS, STUDY_PAGES, TOPIC_SLUGS
++from .catalog import (DEFAULT_METHOD, EXAMPLES, FAMILIES, FAMILY_LIST, HISTORY_PREFIX, METHOD_BY_SLUG, METHODS, ROUTE,
++                      STUDY_PAGES, TOPIC_SLUGS, WORKED_EXAMPLES)
+ from .services.solving import run_comparison, run_system
+ 
+ logger = logging.getLogger(__name__)
+@@ -30,7 +31,9 @@ def page(request, slug):
+     key = METHOD_BY_SLUG.get(slug)
+     if not key:
+         raise Http404()
+-    return render(request, 'linear/simulator.html', {**context, 'method': METHODS[key], 'method_key': key})
++    return render(request, 'linear/simulator.html', {
++        **context, 'method': METHODS[key], 'method_key': key,
++        **method_context('linear:page', key, METHODS, FAMILIES, FAMILY_LIST, ROUTE, WORKED_EXAMPLES)})
+ 
+ 
+ def legacy_lab(request):
+diff --git a/nonlinear/catalog.py b/nonlinear/catalog.py
+index bb19a8f..ac99b4b 100644
+--- a/nonlinear/catalog.py
++++ b/nonlinear/catalog.py
+@@ -4,31 +4,42 @@ Mapa de rutas del módulo (ver también `urls.py`): cada contenido tiene UNA sol
+ `/ecuaciones-no-lineales/<slug>/`, donde <slug> sale de `TOPICS`. Todo enlace, tarjeta, buscador
+ o botón debe construirse con `{% url 'nonlinear:page' slug %}` (o `simulator_urls` en JS) y nunca
+ con una ruta escrita a mano.
++
++Organización pedagógica (ver `ROUTE`): el estudiante recorre SEIS pasos, no once. Los seis
++métodos siguen existiendo con su URL propia, pero se agrupan en dos familias (`FAMILIES`) y el
++método concreto se elige dentro del simulador. Cada método incluye un ejercicio resuelto
++(`WORKED_EXAMPLES`) que el estudiante puede reproducir en el laboratorio.
+ """
+ METHODS = {
+     'bisection': {'slug': 'biseccion', 'title': 'Bisección', 'icon': 'distribute-horizontal', 'difficulty': 'Inicial',
+-        'description': 'Divide el intervalo y sigue el cambio de signo hasta encontrar una raíz.',
++        'family': 'closed',
++        'description': 'Encierra la raíz en un intervalo con cambio de signo y lo parte a la mitad.',
+         'formula': r'x_m=\frac{a+b}{2}', 'parameters': ['a', 'b'], 'expression': 'x^3 - x - 2',
+         'tip': 'Necesitas continuidad y cambio de signo. La anchura del intervalo se reduce a la mitad.'},
+     'false-position': {'slug': 'regla-falsa', 'title': 'Regla falsa', 'icon': 'slash-lg', 'difficulty': 'Inicial',
+-        'description': 'Combina la seguridad de un intervalo con una recta secante.',
++        'family': 'closed',
++        'description': 'Como bisección, pero el nuevo punto lo decide la recta que une los extremos.',
+         'formula': r'x_r=a-\frac{f(a)(b-a)}{f(b)-f(a)}', 'parameters': ['a', 'b'], 'expression': 'x^3 - x - 2',
+         'tip': 'Conserva el cambio de signo. Un extremo puede permanecer inmóvil durante muchas iteraciones.'},
+     'fixed-point': {'slug': 'punto-fijo', 'title': 'Punto fijo', 'icon': 'arrow-repeat', 'difficulty': 'Intermedio',
+-        'description': 'Transforma f(x)=0 en x=g(x) y descubre la escalera de convergencia.',
++        'family': 'open',
++        'description': 'Reescribe f(x)=0 como x=g(x) y repite x←g(x).',
+         'formula': r'x_{n+1}=g(x_n)', 'parameters': ['x0'], 'expression': 'cos(x)',
+         'tip': '|g′(x)| < 1 es una orientación local, no una garantía global. Verifica que g represente la ecuación original.'},
+     'newton': {'slug': 'newton', 'title': 'Newton-Raphson', 'icon': 'graph-up-arrow', 'difficulty': 'Intermedio',
+-        'description': 'Usa la pendiente de la tangente para acercarte a una raíz.',
++        'family': 'open',
++        'description': 'Sigue la tangente desde el punto actual hasta cortar el eje.',
+         'formula': r'x_{n+1}=x_n-\frac{f(x_n)}{f\prime(x_n)}', 'parameters': ['x0'], 'expression': 'x^3 - x - 2',
+         'tip': 'Una derivada pequeña vuelve inestable el paso. La convergencia depende del punto inicial.'},
+     'secant': {'slug': 'secante', 'title': 'Secante', 'icon': 'bezier2', 'difficulty': 'Intermedio',
+-        'description': 'Aproxima la pendiente con dos puntos, sin calcular derivadas.',
++        'family': 'open',
++        'description': 'Newton sin derivada: la pendiente se aproxima con los dos últimos puntos.',
+         'formula': r'x_{n+1}=x_n-\frac{f(x_n)(x_n-x_{n-1})}{f(x_n)-f(x_{n-1})}',
+         'parameters': ['x0', 'x1'], 'expression': 'x^3 - x - 2',
+         'tip': 'Dos imágenes iguales producen un denominador nulo. No conserva necesariamente un intervalo.'},
+     'multiple-roots': {'slug': 'raices-multiples', 'title': 'Raíces múltiples', 'icon': 'intersect', 'difficulty': 'Avanzado',
+-        'description': 'Recupera rapidez cerca de raíces repetidas con Newton modificado.',
++        'family': 'open',
++        'description': 'Newton modificado: recupera la rapidez cuando f y f′ se anulan a la vez.',
+         'formula': r'x_{n+1}=x_n-\frac{f(x_n)f\prime(x_n)}{[f\prime(x_n)]^2-f(x_n)f\prime\prime(x_n)}',
+         'parameters': ['x0'], 'expression': '(x - 1)^3',
+         'tip': 'En una raíz múltiple también se anula f′. Por ejemplo, (x−1)³ tiene multiplicidad 3 en x=1.'},
+@@ -38,12 +49,12 @@ METHODS = {
+ STUDY_PAGES = ('conceptos', 'errores', 'polinomios', 'busqueda', 'comparar')
+ 
+ TOPICS = [
+-    ('conceptos', 'Conceptos básicos', 'lightbulb', 'Comprende qué significa encontrar una raíz.', 'Inicial'),
+-    ('errores', 'Errores', 'bullseye', 'Mide la distancia entre lo exacto y lo aproximado.', 'Inicial'),
+-    ('polinomios', 'Raíces de polinomios', 'intersect', 'Explora multiplicidad y la influencia del punto inicial.', 'Intermedio'),
+-    ('busqueda', 'Búsqueda de raíces', 'search', 'Explora una función antes de elegir un método.', 'Inicial'),
++    ('conceptos', 'Raíces de ecuaciones', 'lightbulb', 'Qué es una raíz y cuándo aceptar una aproximación.', 'Inicial'),
++    ('errores', 'Errores numéricos', 'bullseye', 'Error absoluto, relativo y tolerancia.', 'Inicial'),
++    ('polinomios', 'Raíces múltiples de polinomios', 'intersect', 'Cruce o contacto con el eje: qué cambia en Bisección y Newton.', 'Intermedio'),
++    ('busqueda', 'Búsqueda gráfica', 'search', 'Mira la función antes de elegir intervalo o punto inicial.', 'Inicial'),
+ ] + [(m['slug'], m['title'], m['icon'], m['description'], m['difficulty']) for m in METHODS.values()] + [
+-    ('comparar', 'Comparación', 'bar-chart', 'Contrasta convergencia, error e iteraciones.', 'Intermedio'),
++    ('comparar', 'Comparar métodos', 'bar-chart', 'Los métodos lado a lado: iteraciones, error y convergencia.', 'Intermedio'),
+ ]
+ 
+ METHOD_BY_SLUG = {method['slug']: key for key, method in METHODS.items()}
+@@ -52,3 +63,169 @@ METHOD_BY_SLUG = {method['slug']: key for key, method in METHODS.items()}
+ DEFAULT_METHOD = 'bisection'
+ 
+ TOPIC_SLUGS = frozenset(topic[0] for topic in TOPICS)
++
++# --- Familias: el método se elige dentro del simulador ------------------------
++
++FAMILIES = {
++    'closed': {
++        'title': 'Métodos cerrados', 'default': 'bisection',
++        'description': 'Parten de un intervalo [a, b] con f(a)·f(b) < 0 y lo van estrechando. '
++                       'Siempre convergen si f es continua, aunque suelen necesitar más pasos.',
++    },
++    'open': {
++        'title': 'Métodos abiertos', 'default': 'newton',
++        'description': 'Parten de uno o dos puntos iniciales, sin encerrar la raíz. Suelen ser más rápidos, '
++                       'pero pueden divergir si el punto inicial no es adecuado.',
++    },
++}
++for _key, _method in METHODS.items():
++    FAMILIES[_method['family']].setdefault('methods', []).append({'key': _key, **_method})
++FAMILY_LIST = [{'key': key, **family} for key, family in FAMILIES.items()]
++
++# --- Ruta esencial: lo que ve el estudiante en la barra lateral ----------------
++#
++# Seis pasos en orden. `slugs` agrupa las páginas que cubre cada paso: el paso se marca como
++# actual si el estudiante está en cualquiera de ellas y como completado si terminó alguna.
++ROUTE = [
++    {'slug': 'errores', 'title': 'Errores numéricos', 'icon': 'bullseye',
++     'summary': 'Medir una aproximación y decidir si cumple la tolerancia.'},
++    {'slug': 'conceptos', 'title': 'Raíces de ecuaciones', 'icon': 'lightbulb',
++     'summary': 'Qué significa f(x) = 0 y qué permite aceptar una raíz.'},
++    {'slug': 'biseccion', 'title': 'Métodos cerrados', 'icon': 'distribute-horizontal', 'family': 'closed',
++     'summary': 'Bisección, con la regla falsa como variante. Un intervalo que siempre contiene la raíz.'},
++    {'slug': 'newton', 'title': 'Métodos abiertos', 'icon': 'graph-up-arrow', 'family': 'open',
++     'summary': 'Newton-Raphson, con punto fijo, secante y Newton modificado como alternativas.'},
++    {'slug': 'polinomios', 'title': 'Raíces múltiples de polinomios', 'icon': 'intersect',
++     'summary': 'Una raíz doble toca el eje sin cruzarlo: qué cambia en cada método.'},
++    {'slug': 'comparar', 'title': 'Comparar métodos', 'icon': 'bar-chart',
++     'summary': 'Los recorridos lado a lado: iteraciones, error y convergencia.'},
++]
++for _step in ROUTE:
++    _family = FAMILIES.get(_step.get('family'))
++    _step['slugs'] = [m['slug'] for m in _family['methods']] if _family else [_step['slug']]
++
++ROUTE_SLUGS = frozenset(slug for step in ROUTE for slug in step['slugs'])
++# Contenidos fuera de la ruta: herramientas de apoyo (hoy, la búsqueda gráfica).
++TOOL_SLUGS = [slug for slug, *_ in TOPICS if slug not in ROUTE_SLUGS]
++
++# --- Ejercicios resueltos --------------------------------------------------------
++#
++# Un ejercicio por método, con los valores calculados a mano (6 decimales) para que el estudiante
++# pueda seguirlos en papel y luego reproducirlos en el simulador con `query`.
++
++_CUBIC = r'f(x)=x^{3}-x-2,\qquad r\approx1.521380'
++
++WORKED_EXAMPLES = {
++    'bisection': {
++        'title': 'Bisección en [1, 2]',
++        'statement': 'Aproxima la raíz de f(x) = x³ − x − 2 en el intervalo [1, 2] con cuatro iteraciones.',
++        'setup_tex': _CUBIC + r',\qquad f(1)=-2<0,\quad f(2)=4>0',
++        'steps': [
++            ('Comprobar el cambio de signo.', 'f(1) = −2 y f(2) = 4 tienen signos opuestos y f es continua: hay una raíz en [1, 2].'),
++            ('Calcular el punto medio.', 'x₁ = (1 + 2)/2 = 1.5 y f(1.5) = −0.125 < 0. La raíz está en [1.5, 2].'),
++            ('Repetir con el subintervalo que conserva el cambio de signo.', 'x₂ = 1.75, f(1.75) = 1.609 > 0 → [1.5, 1.75]; x₃ = 1.625 → [1.5, 1.625]; x₄ = 1.5625.'),
++            ('Acotar el error.', 'Tras n pasos |xₙ − r| ≤ (b − a)/2ⁿ. Con n = 4 la cota es 1/16 = 0.0625.'),
++        ],
++        'columns': ['n', 'a', 'b', 'xₘ', 'f(xₘ)', '(b−a)/2'],
++        'rows': [
++            ['1', '1.000000', '2.000000', '1.500000', '−0.125000', '0.500000'],
++            ['2', '1.500000', '2.000000', '1.750000', '1.609375', '0.250000'],
++            ['3', '1.500000', '1.750000', '1.625000', '0.666016', '0.125000'],
++            ['4', '1.500000', '1.625000', '1.562500', '0.252197', '0.062500'],
++        ],
++        'conclusion': 'Cada paso divide el error máximo entre dos: es seguro pero lento. Para una tolerancia de 10⁻⁴ harían falta unas 14 iteraciones.',
++        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.0001',
++    },
++    'false-position': {
++        'title': 'Regla falsa en [1, 2]',
++        'statement': 'Misma función e intervalo que en bisección, pero el nuevo punto es el corte de la recta que une (a, f(a)) y (b, f(b)).',
++        'setup_tex': _CUBIC + r',\qquad x_r=b-\frac{f(b)(b-a)}{f(b)-f(a)}',
++        'steps': [
++            ('Primer corte.', 'x₁ = 2 − 4·(2 − 1)/(4 − (−2)) = 1.333333; f(x₁) = −0.962963 < 0, así que a pasa a ser 1.333333.'),
++            ('Segundo corte.', 'x₂ = 1.462687, f(x₂) = −0.333339. El extremo b = 2 no se mueve.'),
++            ('Tercer corte.', 'x₃ = 1.504019, f(x₃) = −0.101818. Las aproximaciones se acercan a la raíz solo por la izquierda.'),
++        ],
++        'columns': ['n', 'a', 'b', 'xᵣ', 'f(xᵣ)'],
++        'rows': [
++            ['1', '1.000000', '2.000000', '1.333333', '−0.962963'],
++            ['2', '1.333333', '2.000000', '1.462687', '−0.333339'],
++            ['3', '1.462687', '2.000000', '1.504019', '−0.101818'],
++        ],
++        'conclusion': 'Avanza más rápido que bisección al principio, pero como b queda fijo la anchura del intervalo no tiende a cero: no sirve como cota del error.',
++        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.0001',
++    },
++    'newton': {
++        'title': 'Newton-Raphson desde x₀ = 1.5',
++        'statement': 'Aproxima la raíz de f(x) = x³ − x − 2 partiendo de x₀ = 1.5, con f′(x) = 3x² − 1.',
++        'setup_tex': _CUBIC + r",\qquad x_{n+1}=x_n-\frac{f(x_n)}{f'(x_n)}",
++        'steps': [
++            ('Evaluar f y f′ en x₀.', 'f(1.5) = −0.125 y f′(1.5) = 5.75.'),
++            ('Aplicar la fórmula.', 'x₁ = 1.5 − (−0.125)/5.75 = 1.521739.'),
++            ('Repetir.', 'f(x₁) = 0.002137 → x₂ = 1.521380; f(x₂) ≈ 10⁻⁶ → x₃ = 1.521380. Los decimales correctos se duplican en cada paso.'),
++        ],
++        'columns': ['n', 'xₙ', 'f(xₙ)', 'f′(xₙ)', 'xₙ₊₁'],
++        'rows': [
++            ['0', '1.500000', '−0.125000', '5.750000', '1.521739'],
++            ['1', '1.521739', '0.002137', '5.947070', '1.521380'],
++            ['2', '1.521380', '0.000001', '5.943790', '1.521380'],
++        ],
++        'conclusion': 'Tres iteraciones bastan para seis decimales: convergencia cuadrática. Requiere la derivada y un buen punto inicial (compara con x₀ = 0, donde f′ se acerca a cero).',
++        'query': 'expression=x%5E3-x-2&x0=1.5&tolerance=0.0001',
++    },
++    'fixed-point': {
++        'title': 'Punto fijo con g(x) = (x + 2)^(1/3)',
++        'statement': 'De x³ − x − 2 = 0 se despeja x = (x + 2)^(1/3). Itera x ← g(x) desde x₀ = 1.5.',
++        'setup_tex': r"g(x)=\sqrt[3]{x+2},\qquad g'(x)=\frac{1}{3}(x+2)^{-2/3},\qquad |g'(1.5)|\approx0.145<1",
++        'steps': [
++            ('Elegir una transformación que contraiga.', '|g′(x)| ≈ 0.145 cerca de la raíz: menor que 1, así que la iteración converge localmente.'),
++            ('Iterar.', 'x₁ = g(1.5) = 1.518294; x₂ = 1.520935; x₃ = 1.521316; x₄ = 1.521370.'),
++            ('Observar el ritmo.', 'El paso |xₙ₊₁ − xₙ| se reduce unas 7 veces por iteración (≈ 1/|g′|): convergencia lineal.'),
++        ],
++        'columns': ['n', 'xₙ', 'g(xₙ)', '|g(xₙ) − xₙ|'],
++        'rows': [
++            ['0', '1.500000', '1.518294', '0.018294'],
++            ['1', '1.518294', '1.520935', '0.002641'],
++            ['2', '1.520935', '1.521316', '0.000380'],
++            ['3', '1.521316', '1.521370', '0.000055'],
++        ],
++        'conclusion': 'Con g(x) = x³ − 2 (otro despeje válido) |g′| ≈ 6.9 > 1 y la iteración diverge: la elección de g decide todo.',
++        'query': 'expression=(x%2B2)%5E0.3333333333333333&x0=1.5&tolerance=0.0001',
++    },
++    'secant': {
++        'title': 'Secante desde x₀ = 1, x₁ = 2',
++        'statement': 'Aproxima la raíz de f(x) = x³ − x − 2 sin derivadas, usando la pendiente entre los dos últimos puntos.',
++        'setup_tex': _CUBIC + r',\qquad x_{n+1}=x_n-\frac{f(x_n)(x_n-x_{n-1})}{f(x_n)-f(x_{n-1})}',
++        'steps': [
++            ('Primera secante.', 'Con (1, −2) y (2, 4): x₂ = 2 − 4·(2 − 1)/(4 + 2) = 1.333333.'),
++            ('Seguir con los dos últimos puntos.', 'Con x₁ = 2 y x₂ = 1.333333: x₃ = 1.462687. Con x₂ y x₃: x₄ = 1.531169 (se pasa de la raíz).'),
++            ('Una más.', 'x₅ = 1.520926, f(x₅) = −0.002693. A diferencia de la regla falsa, no conserva el intervalo.'),
++        ],
++        'columns': ['n', 'xₙ₋₁', 'xₙ', 'xₙ₊₁', 'f(xₙ₊₁)'],
++        'rows': [
++            ['1', '1.000000', '2.000000', '1.333333', '−0.962963'],
++            ['2', '2.000000', '1.333333', '1.462687', '−0.333339'],
++            ['3', '1.333333', '1.462687', '1.531169', '0.058626'],
++            ['4', '1.462687', '1.531169', '1.520926', '−0.002693'],
++        ],
++        'conclusion': 'Converge con orden ≈ 1.618: más rápido que bisección, algo más lento que Newton, y sin calcular f′.',
++        'query': 'expression=x%5E3-x-2&x0=1&x1=2&tolerance=0.0001',
++    },
++    'multiple-roots': {
++        'title': 'Raíz doble de p(x) = (x − 1)²(x + 2) desde x₀ = 1.8',
++        'statement': 'En x = 1 se anulan p y p′. Compara Newton ordinario con Newton modificado partiendo de 1.8.',
++        'setup_tex': r"p(x)=x^{3}-3x+2,\quad p'(x)=3x^{2}-3,\quad p''(x)=6x,\qquad x_{n+1}=x_n-\frac{p\,p'}{(p')^{2}-p\,p''}",
++        'steps': [
++            ('Reconocer la multiplicidad.', 'p(1) = 0 y p′(1) = 0: raíz doble. Newton ordinario pierde la convergencia cuadrática (factor ≈ 1/2).'),
++            ('Aplicar Newton modificado.', 'x₁ = 0.934959; x₂ = 0.999264; x₃ = 1.000000. Tres pasos para seis decimales.'),
++            ('Contrastar con Newton ordinario.', 'Desde el mismo 1.8: 1.438095, 1.232168, 1.120108, 1.061188… el error se reduce solo a la mitad por paso.'),
++        ],
++        'columns': ['n', 'xₙ (modificado)', 'p(xₙ)', 'xₙ₊₁ (modificado)', 'xₙ₊₁ (Newton ordinario)'],
++        'rows': [
++            ['0', '1.800000', '2.432000', '0.934959', '1.438095'],
++            ['1', '0.934959', '0.012416', '0.999264', '1.232168'],
++            ['2', '0.999264', '0.000002', '1.000000', '1.120108'],
++        ],
++        'conclusion': 'Cuando f′(r) = 0, Newton modificado recupera la convergencia cuadrática. El precio es calcular también f″.',
++        'query': 'expression=(x-1)%5E2*(x%2B2)&x0=1.8&tolerance=0.00000001',
++    },
++}
+diff --git a/nonlinear/views.py b/nonlinear/views.py
+index 7febe95..d24e933 100644
+--- a/nonlinear/views.py
++++ b/nonlinear/views.py
+@@ -10,7 +10,8 @@ from django.views.decorators.http import require_POST
+ 
+ from core.models import UserProgress
+ 
+-from .catalog import DEFAULT_METHOD, METHOD_BY_SLUG, METHODS, STUDY_PAGES, TOPIC_SLUGS
++from .catalog import (DEFAULT_METHOD, FAMILIES, FAMILY_LIST, METHOD_BY_SLUG, METHODS, ROUTE, STUDY_PAGES, TOPIC_SLUGS,
++                      WORKED_EXAMPLES)
+ from .models import CalculationHistory
+ from .services.comparison import compare_methods
+ from .services.errors import calculate_errors
+@@ -73,10 +74,26 @@ def page(request, slug):
+     return render(
+         request,
+         'nonlinear/simulator.html',
+-        {'topic': slug, 'method': METHODS[key], 'method_key': key, 'methods': METHODS, 'method_registry': METHODS},
++        {'topic': slug, 'method': METHODS[key], 'method_key': key, 'methods': METHODS, 'method_registry': METHODS,
++         **method_context('nonlinear:page', key, METHODS, FAMILIES, FAMILY_LIST, ROUTE, WORKED_EXAMPLES)},
+     )
+ 
+ 
++def method_context(url_name, key, methods, families, family_list, route, worked_examples):
++    """Contexto compartido por los simuladores de ambos módulos: familia, selector y ejercicio resuelto.
++
++    El método se elige dentro del simulador (optgroup por familia) y cada método trae un ejercicio
++    resuelto cuyo enlace «Reproducir» apunta a la URL canónica del método con los datos del ejercicio.
++    """
++    method = methods[key]
++    family = {**families[method['family']], 'default_slug': methods[families[method['family']]['default']]['slug']}
++    position = next((n for n, step in enumerate(route, start=1) if method['slug'] in step['slugs']), None)
++    example = worked_examples[key]
++    url = f"{reverse(url_name, args=[method['slug']])}?{example['query']}"
++    return {'family': family, 'families': family_list, 'route_position': position,
++            'worked_example': {**example, 'url': url}}
++
++
+ def legacy_lab(request):
+     """Enlaces heredados `/laboratorio/?method=...`: 301 a la URL canónica del método.
+ 
+diff --git a/static/css/lessons.css b/static/css/lessons.css
+index f3942bd..230243a 100644
+--- a/static/css/lessons.css
++++ b/static/css/lessons.css
+@@ -174,3 +174,36 @@ main .graph-controls>p { margin: 16px 18px; }
+   main details>.disclosure-content { padding: 16px; }
+   .scenario-list article { gap: 14px; }
+ }
++
++/* Ruta del módulo: pocos pasos, en orden, con el método elegible dentro del simulador. */
++.route-list { list-style: none; padding: 0; margin: 0 0 32px; display: grid; gap: 14px; }
++.route-step { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 20px; align-items: start; margin: 0; padding: 22px 26px; }
++.route-step.is-complete .step-index { background: #e7f3ec; border-color: #9cc9ad; color: #276a45; }
++.route-copy h3 { margin: 2px 0 6px; font-size: 1.125rem; }
++.route-copy h3 a { color: var(--ink); }
++.route-copy p { margin: 0; font-size: .9375rem; line-height: 1.65; max-width: 720px; }
++.route-methods { margin-top: 8px !important; font: .75rem var(--mono); color: #61557b; }
++.route-step .card-link { margin-top: 4px; white-space: nowrap; }
++.sidebar nav>a.nav-tool { font-size: .6875rem; opacity: .85; }
++
++/* Selector de método dentro del simulador (familias) y ejercicio resuelto. */
++.method-picker { display: grid; grid-template-columns: minmax(200px, 320px) minmax(0, 1fr); gap: 6px 22px; align-items: center; padding: 16px 22px; }
++.method-picker label { margin: 0; grid-column: 1; }
++.method-picker select { grid-column: 1; }
++.method-picker .input-help { grid-column: 2; grid-row: 1 / span 2; margin: 0; font-size: .8125rem; line-height: 1.6; }
++.configuration #method-select { margin-bottom: 6px; }
++.worked-example .formula { background: #f5f4fa; padding: 12px 16px; border-radius: 4px; }
++.worked-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: start; margin-top: 18px; }
++.worked-list { margin: 0; padding-left: 22px; display: grid; gap: 14px; }
++.worked-list li { font-size: .9375rem; line-height: 1.7; color: var(--muted); }
++.worked-list li strong { color: var(--ink); font-weight: 500; }
++.worked-list li::marker { font: .75rem var(--mono); color: #65518e; }
++.worked-example .table { white-space: normal; }
++.worked-example .table td { font-family: var(--mono); font-size: .8125rem; }
++.worked-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin: 22px 0 0; }
++@media (max-width: 900px) {
++  .route-step { grid-template-columns: 32px minmax(0, 1fr); }
++  .route-step .card-link { grid-column: 2; }
++  .worked-grid, .method-picker { grid-template-columns: 1fr; }
++  .method-picker .input-help { grid-column: 1; grid-row: auto; }
++}
+diff --git a/static/js/linear/lab.js b/static/js/linear/lab.js
+index 29d1abf..3df1020 100644
+--- a/static/js/linear/lab.js
++++ b/static/js/linear/lab.js
+@@ -265,6 +265,19 @@ form.addEventListener('submit', async event => {
+   }
+ });
+ 
++// Selector de método (directo/iterativo): lleva a la URL canónica del método elegido con el sistema actual.
++document.getElementById('method-select')?.addEventListener('change', event => {
++  const slug = event.target.value;
++  if (!slug) return;
++  const params = new URLSearchParams();
++  try {
++    const {matrix, vector} = read();
++    params.set('matrix', JSON.stringify(matrix));
++    params.set('vector', JSON.stringify(vector));
++  } catch { /* campos incompletos: el destino carga el caso base */ }
++  location.assign(`/sistemas-lineales/${slug}/?${params}`);
++});
++
+ // Datos iniciales: ?matrix=[[...]]&vector=[...] (enlaces del historial) o el caso base.
+ const query = new URLSearchParams(location.search);
+ try {
+diff --git a/static/js/nonlinear/simulator.js b/static/js/nonlinear/simulator.js
+index 3d6d471..e9a8033 100644
+--- a/static/js/nonlinear/simulator.js
++++ b/static/js/nonlinear/simulator.js
+@@ -369,6 +369,21 @@ $('range-form').addEventListener('submit', event => {
+   preview({ x: [a, b], y: y0 === '' ? null : [Number(y0), Number(y1)] });
+ });
+ 
++// Selector de método (familias cerrada/abierta). Cambiar de método lleva a su URL canónica
++// conservando tolerancia, iteraciones y puntos; la expresión solo si ambos métodos usan f(x)
++// (en punto fijo el campo es g(x) y no es intercambiable).
++$('method-select')?.addEventListener('change', event => {
++  const target = event.target.value;
++  if (target === method || !simulatorUrls[target]) return;
++  const params = new URLSearchParams();
++  if (method !== 'fixed-point' && target !== 'fixed-point') params.set('expression', form.elements.expression.value);
++  for (const key of ['tolerance', 'max_iterations', 'a', 'b', 'x0', 'x1']) {
++    const field = form.elements[key];
++    if (field && !field.disabled && field.value !== '') params.set(key, field.value);
++  }
++  location.assign(`${simulatorUrls[target]}?${params}`);
++});
++
+ // Parámetros iniciales por URL (enlaces compartidos desde el historial: misma página, otros valores).
+ const query = new URLSearchParams(location.search);
+ for (const key of ['expression', 'tolerance', 'max_iterations', 'a', 'b', 'x0', 'x1']) {
+diff --git a/templates/components/linear_tabs.html b/templates/components/linear_tabs.html
+index a874a44..9181822 100644
+--- a/templates/components/linear_tabs.html
++++ b/templates/components/linear_tabs.html
+@@ -1 +1 @@
+-<nav class="method-tabs" aria-label="Secciones del tema"><a href="{% url 'linear:page' 'formulacion' %}">Teoría</a><a href="#lab" class="selected">Método</a><a href="{% url 'linear:page' 'comparacion-metodos' %}">Comparación</a></nav>
++<nav class="method-tabs" aria-label="Secciones del tema"><a href="{% url 'linear:page' 'formulacion' %}">Teoría</a><a href="#lab" class="selected">Laboratorio</a><a href="#ejercicio-resuelto">Ejercicio resuelto</a><a href="{% url 'linear:page' 'comparacion-metodos' %}">Comparación</a></nav>
+diff --git a/templates/components/method_tabs.html b/templates/components/method_tabs.html
+index f86e105..216e4a6 100644
+--- a/templates/components/method_tabs.html
++++ b/templates/components/method_tabs.html
+@@ -1 +1 @@
+-<nav class="method-tabs" aria-label="Secciones del método"><a href="#theory">Teoría</a><a href="#simulator" class="selected">Método</a><a href="/ecuaciones-no-lineales/comparar/">Comparación</a></nav>
++<nav class="method-tabs" aria-label="Secciones del método"><a href="#simulator" class="selected">Simulador</a><a href="#ejercicio-resuelto">Ejercicio resuelto</a><a href="#theory">Teoría</a><a href="/ecuaciones-no-lineales/comparar/">Comparación</a></nav>
+diff --git a/templates/components/progress_indicator.html b/templates/components/progress_indicator.html
+index 85b3fdb..f72c279 100644
+--- a/templates/components/progress_indicator.html
++++ b/templates/components/progress_indicator.html
+@@ -1 +1 @@
+-<div class="learning-progress"><div class="progress-caption"><strong>Tu avance</strong><span>{{ module_progress }}%</span></div><div class="progress-track" aria-hidden="true"><span style="width:{{ module_progress }}%"></span></div><small>{{ completed_count }} de {{ learning_topics|length }} temas completados</small></div>
++<div class="learning-progress"><div class="progress-caption"><strong>Tu avance</strong><span>{{ module_progress }}%</span></div><div class="progress-track" aria-hidden="true"><span style="width:{{ module_progress }}%"></span></div><small>{{ route_completed_count }} de {{ route_topics|length }} pasos completados</small></div>
+diff --git a/templates/components/sidebar.html b/templates/components/sidebar.html
+index 55b0725..d9e6ea5 100644
+--- a/templates/components/sidebar.html
++++ b/templates/components/sidebar.html
+@@ -8,16 +8,20 @@
+     <a href="{% url 'favorites' %}" {% if request.path == '/favoritos/' %}aria-current="page"{% endif %}><i aria-hidden="true" class="bi bi-bookmark-star"></i> Favoritos</a>
+     <a href="{% url 'resources' %}" {% if request.path == '/recursos/' %}aria-current="page"{% endif %}><i aria-hidden="true" class="bi bi-book"></i> Recursos</a>
+ 
+-    <p class="nav-section">CONTENIDOS <span>Módulo 01</span></p>
+-    {% for item in learning_topics %}
+-    <a href="{% url 'nonlinear:page' item.slug %}" {% if topic == item.slug %}aria-current="page"{% endif %}>
++    {# Rutas por módulo (ver ROUTE en nonlinear/catalog.py y linear/catalog.py). Los métodos se eligen dentro del simulador. #}
++    <p class="nav-section">MÓDULO 01 <span>Ecuaciones no lineales</span></p>
++    {% for item in route_topics %}
++    <a href="{% url 'nonlinear:page' item.slug %}" {% if topic in item.slugs %}aria-current="page"{% endif %} title="{{ item.summary }}">
+       <span class="step-number">{% if item.completed %}✓{% else %}{{ forloop.counter }}{% endif %}</span>{{ item.title }}
+     </a>
+     {% endfor %}
++    {% for item in tool_topics %}
++    <a href="{% url 'nonlinear:page' item.slug %}" class="nav-tool" {% if topic == item.slug %}aria-current="page"{% endif %}><i aria-hidden="true" class="bi bi-{{ item.icon }}"></i> {{ item.title }}</a>
++    {% endfor %}
+ 
+-    <p class="nav-section">CONTENIDOS <span>Módulo 02 · Sistemas lineales</span></p>
+-    {% for item in linear_topics %}
+-    <a href="{% url 'linear:page' item.slug %}" {% if topic == item.slug %}aria-current="page"{% endif %}>
++    <p class="nav-section">MÓDULO 02 <span>Sistemas lineales</span></p>
++    {% for item in linear_route %}
++    <a href="{% url 'linear:page' item.slug %}" {% if topic in item.slugs %}aria-current="page"{% endif %} title="{{ item.summary }}">
+       <span class="step-number">{% if item.completed %}✓{% else %}{{ forloop.counter }}{% endif %}</span>{{ item.title }}
+     </a>
+     {% endfor %}
+diff --git a/templates/components/worked_example.html b/templates/components/worked_example.html
+new file mode 100644
+index 0000000..899fba2
+--- /dev/null
++++ b/templates/components/worked_example.html
+@@ -0,0 +1,23 @@
++{# Ejercicio resuelto del método actual (ver WORKED_EXAMPLES en el catalog.py de cada módulo). Valores calculados a mano, reproducibles en el simulador. #}
++{% with ex=worked_example %}
++<section class="panel worked-example" id="ejercicio-resuelto" aria-labelledby="worked-title">
++  <span class="eyebrow">EJERCICIO RESUELTO</span>
++  <h2 id="worked-title">{{ ex.title }}</h2>
++  <p>{{ ex.statement }}</p>
++  <div class="formula">\[{{ ex.setup_tex }}\]</div>
++  <div class="worked-grid">
++    <ol class="worked-list">
++      {% for label, text in ex.steps %}<li><strong>{{ label }}</strong> <span>{{ text }}</span></li>{% endfor %}
++    </ol>
++    <div class="table-scroll">
++      <table class="table">
++        <caption>Valores redondeados a seis decimales</caption>
++        <thead><tr>{% for header in ex.columns %}<th scope="col">{{ header }}</th>{% endfor %}</tr></thead>
++        <tbody>{% for row in ex.rows %}<tr>{% for value in row %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody>
++      </table>
++    </div>
++  </div>
++  <div class="lesson-note"><strong>Qué aprender de este ejercicio</strong><p>{{ ex.conclusion }}</p></div>
++  <p class="worked-actions"><a class="btn btn-primary" href="{{ ex.url }}" data-testid="worked-example-reproduce">Reproducir en el simulador <i class="bi bi-play-fill"></i></a> <span class="input-help">Carga estos datos y avanza paso a paso para comparar con la tabla.</span></p>
++</section>
++{% endwith %}
+diff --git a/templates/linear/landing.html b/templates/linear/landing.html
+index 1f2a2b2..04206f0 100644
+--- a/templates/linear/landing.html
++++ b/templates/linear/landing.html
+@@ -1,8 +1,8 @@
+ {% extends 'base.html' %}{% block title %}Sistemas de ecuaciones lineales · NumLearn{% endblock %}
+ {% block content %}
+ <div class="breadcrumb-line">Inicio / Módulo 2</div>
+-<section class="page-hero"><span class="eyebrow">MÓDULO 02 · LABORATORIO INTERACTIVO</span><h1>Sistemas de ecuaciones lineales</h1><p>Resuelve sistemas de tamaño 2 y 3 con un método directo (eliminación gaussiana con pivoteo parcial) y uno iterativo (Gauss-Seidel), y contrasta ambos mediante el residuo.</p>
+-  <div class="learning-progress"><div class="progress-caption"><strong>Tu avance</strong><span>{{ linear_completed_count }} de {{ linear_topics|length }}</span></div></div></section>
+-<div class="section-heading"><div><h2>Índice del módulo</h2><p>Teoría, métodos y comparación.</p></div></div>
+-<div class="topic-grid">{% for item in linear_topics %}<article class="panel topic-card"><div class="card-top"><span class="module-icon"><i class="bi bi-{{ item.icon }}"></i></span><span class="subtle-pill">{{ item.difficulty }}</span></div><h3>{{ item.title }}</h3><p>{{ item.description }}</p><small>{% if item.completed %}✓ Completado · 100%{% else %}Por explorar · 0%{% endif %}</small><a href="{% url 'linear:page' item.slug %}" class="card-link">Explorar <i class="bi bi-arrow-right"></i></a></article>{% endfor %}</div>
++<section class="page-hero"><span class="eyebrow">MÓDULO 02 · LABORATORIO INTERACTIVO</span><h1>Sistemas de ecuaciones lineales</h1><p>Cuatro pasos: formula A·x = b, resuélvelo con un método directo y con uno iterativo, y compara ambos mediante el residuo. Cada método trae un ejercicio resuelto sobre el caso base.</p>
++  <div class="learning-progress"><div class="progress-caption"><strong>Tu avance</strong><span>{{ linear_completed_count }} de {{ linear_route|length }} pasos</span></div></div></section>
++<div class="section-heading"><div><h2>Ruta del módulo</h2><p>El método concreto se elige dentro del laboratorio.</p></div></div>
++<ol class="route-list">{% for item in linear_route %}<li class="panel route-step{% if item.completed %} is-complete{% endif %}"><span class="step-index">{% if item.completed %}✓{% else %}{{ forloop.counter|stringformat:'02d' }}{% endif %}</span><div class="route-copy"><h3><a href="{% url 'linear:page' item.slug %}">{{ item.title }}</a></h3><p>{{ item.summary }}</p>{% if item.family %}<p class="route-methods">{% for m in item.family.methods %}<a href="{% url 'linear:page' m.slug %}">{{ m.title }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}</div><a href="{% url 'linear:page' item.slug %}" class="card-link">{% if item.completed %}Repasar{% else %}Empezar{% endif %} <i class="bi bi-arrow-right"></i></a></li>{% endfor %}</ol>
+ {% endblock %}
+diff --git a/templates/linear/simulator.html b/templates/linear/simulator.html
+index e5f78e5..f374f3d 100644
+--- a/templates/linear/simulator.html
++++ b/templates/linear/simulator.html
+@@ -1,14 +1,23 @@
+ {% extends 'base.html' %}{% load static %}
+-{% block title %}{{ method.title }} · NumLearn{% endblock %}
++{% block title %}{{ method.title }} · {{ family.title }} · NumLearn{% endblock %}
+ {% block scripts %}<link href="{% static 'css/linear.css' %}" rel="stylesheet"><script type="module" src="{% static 'js/linear/lab.js' %}"></script>{% endblock %}
+ {% block content %}
+-<div class="breadcrumb-line"><a href="{% url 'linear:landing' %}">Módulo 2</a> / {{ method.title }}</div>
++<div class="breadcrumb-line"><a href="{% url 'linear:landing' %}">Módulo 2</a> / {{ family.title }} / {{ method.title }}</div>
+ <header class="method-header">
+-  <div><span class="eyebrow">MÉTODO NUMÉRICO · {% if method_key == 'gauss' %}DIRECTO{% else %}ITERATIVO{% endif %}</span><h1>{{ method.title }}</h1><p>{{ method.description }}</p></div>
++  <div><span class="eyebrow">{{ family.title|upper }} · PASO {{ route_position|stringformat:'02d' }}</span><h1>{{ method.title }}</h1><p>{{ method.description }}</p></div>
+   <button class="btn btn-light complete-topic" data-topic="{{ topic }}" data-endpoint="/api/linear/progress/">Marcar como completado <i class="bi bi-check2"></i></button>
+ </header>
+ {% include 'components/linear_tabs.html' %}
++{# El método se elige aquí; cambiarlo lleva a su URL canónica conservando la matriz y el vector (lab.js). #}
++<div class="panel method-picker">
++  <label for="method-select">Método</label>
++  <select id="method-select" aria-describedby="method-family-help" data-testid="method-select">
++    {% for group in families %}<optgroup label="{{ group.title }}">{% for m in group.methods %}<option value="{{ m.slug }}" {% if m.key == method_key %}selected{% endif %}>{{ m.title }}</option>{% endfor %}</optgroup>{% endfor %}
++  </select>
++  <small class="input-help" id="method-family-help">{{ family.description }}</small>
++</div>
+ {% include 'components/linear_lab.html' with mode=method_key %}
++{% include 'components/worked_example.html' %}
+ <div id="theory" class="theory-grid">
+   <section class="panel"><span class="eyebrow">EL FUNDAMENTO</span><h3>Fórmula utilizada</h3><div class="formula">\[{{ method.formula }}\]</div></section>
+   <section class="panel">
+diff --git a/templates/nonlinear/landing.html b/templates/nonlinear/landing.html
+index a75bfac..99cabb5 100644
+--- a/templates/nonlinear/landing.html
++++ b/templates/nonlinear/landing.html
+@@ -1 +1,7 @@
+-{% extends 'base.html' %}{% block content %}<div class="breadcrumb-line">Inicio / Módulo 1</div><section class="page-hero"><span class="eyebrow">MÓDULO 01 · LABORATORIO INTERACTIVO</span><h1>Errores, raíces y polinomios</h1><p>Encuentra raíces, analiza el error y descubre visualmente cómo convergen los principales métodos numéricos.</p>{% include 'components/progress_indicator.html' %}</section>{% include 'components/focus_topics.html' %}<div class="section-heading"><div><h2>Índice del módulo</h2><p>Fundamentos, métodos y actividades de práctica.</p></div></div><div class="topic-grid" id="topic-grid">{% for item in learning_topics %}<article class="panel topic-card"><div class="card-top"><span class="module-icon"><i class="bi bi-{{ item.icon }}"></i></span><span class="subtle-pill">{{ item.difficulty }}</span></div><h3>{{ item.title }}</h3><p>{{ item.description }}</p><small>{% if item.completed %}✓ Completado · 100%{% else %}Por explorar · 0%{% endif %}</small><a href="{% url 'nonlinear:page' item.slug %}" class="card-link">Explorar <i class="bi bi-arrow-right"></i></a></article>{% endfor %}</div>{% endblock %}
++{% extends 'base.html' %}{% block content %}<div class="breadcrumb-line">Inicio / Módulo 1</div>
++<section class="page-hero"><span class="eyebrow">MÓDULO 01 · LABORATORIO INTERACTIVO</span><h1>Ecuaciones no lineales</h1><p>Seis pasos, en orden: mide el error, entiende qué es una raíz, resuelve con un método cerrado y uno abierto, estudia las raíces múltiples y compara. Cada método trae un ejercicio resuelto.</p>{% include 'components/progress_indicator.html' %}</section>
++<div class="section-heading"><div><h2>Ruta del módulo</h2><p>El método concreto (bisección, regla falsa, Newton, punto fijo, secante o raíces múltiples) se elige dentro del simulador.</p></div></div>
++<ol class="route-list" id="topic-grid">{% for item in route_topics %}<li class="panel route-step{% if item.completed %} is-complete{% endif %}"><span class="step-index">{% if item.completed %}✓{% else %}{{ forloop.counter|stringformat:'02d' }}{% endif %}</span><div class="route-copy"><h3><a href="{% url 'nonlinear:page' item.slug %}">{{ item.title }}</a></h3><p>{{ item.summary }}</p>{% if item.family %}<p class="route-methods">{% for m in item.family.methods %}<a href="{% url 'nonlinear:page' m.slug %}">{{ m.title }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}</div><a href="{% url 'nonlinear:page' item.slug %}" class="card-link">{% if item.completed %}Repasar{% else %}Empezar{% endif %} <i class="bi bi-arrow-right"></i></a></li>{% endfor %}</ol>
++{% if tool_topics %}<div class="section-heading"><div><h2>Herramientas</h2><p>Apoyo fuera de la ruta; úsalas cuando las necesites.</p></div></div>
++<div class="topic-grid">{% for item in tool_topics %}<article class="panel topic-card"><div class="card-top"><span class="module-icon"><i class="bi bi-{{ item.icon }}"></i></span><span class="subtle-pill">{{ item.difficulty }}</span></div><h3>{{ item.title }}</h3><p>{{ item.description }}</p><a href="{% url 'nonlinear:page' item.slug %}" class="card-link">Abrir <i class="bi bi-arrow-right"></i></a></article>{% endfor %}</div>{% endif %}
++{% endblock %}
+diff --git a/templates/nonlinear/simulator.html b/templates/nonlinear/simulator.html
+index 619f32c..838483a 100644
+--- a/templates/nonlinear/simulator.html
++++ b/templates/nonlinear/simulator.html
+@@ -1,12 +1,12 @@
+ {% extends 'base.html' %}{% load static %}
+-{% block title %}{{ method.title }} · NumLearn{% endblock %}
++{% block title %}{{ method.title }} · {{ family.title }} · NumLearn{% endblock %}
+ {% block scripts %}<script type="module" src="{% static 'js/nonlinear/simulator.js' %}"></script>{% endblock %}
+ {% block content %}
+-<div class="breadcrumb-line"><a href="/ecuaciones-no-lineales/">Módulo 1</a> / {{ method.title }}</div>
++<div class="breadcrumb-line"><a href="/ecuaciones-no-lineales/">Módulo 1</a> / <a href="{% url 'nonlinear:page' family.default_slug %}">{{ family.title }}</a> / {{ method.title }}</div>
+ 
+ <header class="method-header">
+   <div>
+-    <span class="eyebrow">MÉTODO NUMÉRICO</span>
++    <span class="eyebrow">{{ family.title|upper }} · PASO {{ route_position|stringformat:'02d' }}</span>
+     <h1 id="method-title">{{ method.title }}</h1>
+     <p id="method-description">{{ method.description }}</p>
+   </div>
+@@ -21,6 +21,14 @@
+   {# ---- Configuración ---- #}
+   <section class="panel configuration">
+     <div class="panel-heading"><h2><i class="bi bi-sliders"></i> Configuración</h2><span class="step-label">01</span></div>
++
++    {# El método se elige aquí; cambiarlo lleva a su URL canónica conservando los parámetros. #}
++    <label for="method-select">Método</label>
++    <select id="method-select" aria-describedby="method-family-help" data-testid="method-select">
++      {% for group in families %}<optgroup label="{{ group.title }}">{% for m in group.methods %}<option value="{{ m.key }}" {% if m.key == method_key %}selected{% endif %}>{{ m.title }}</option>{% endfor %}</optgroup>{% endfor %}
++    </select>
++    <small class="input-help" id="method-family-help">{{ family.description }}</small>
++
+     <form id="solver-form">
+       {% csrf_token %}
+       <label for="expression" id="expression-label">{% if method_key == 'fixed-point' %}Función g(x){% else %}Función f(x){% endif %}</label>
+@@ -104,6 +112,8 @@
+ 
+ {% include 'components/explanation_card.html' %}
+ 
++{% include 'components/worked_example.html' %}
++
+ <section class="panel">
+   <h2>¿Cómo disminuye el residuo?</h2>
+   <p>Residuo: |f(x)| (en punto fijo, |g(x)−x|). No es el error real |x−r|. La escala vertical es logarítmica; un residuo cero no se dibuja en ella.</p>
+-- 
+2.39.5
+

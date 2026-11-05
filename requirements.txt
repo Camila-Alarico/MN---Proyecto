@@ -1,0 +1,6 @@
+Django>=5.2.8,<5.3
+psycopg[binary]>=3.2,<4
+django-environ>=0.12,<1
+sympy>=1.14,<2
+whitenoise>=6.9,<7
+gunicorn>=23,<26; sys_platform != 'win32'

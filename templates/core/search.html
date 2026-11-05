@@ -1,0 +1,41 @@
+{% extends 'base.html' %}{% block title %}Buscar · NumLearn{% endblock %}{% block content %}
+<div class="breadcrumb-line">Inicio / Buscar</div>
+<header class="page-hero">
+  <span class="eyebrow">BÚSQUEDA</span>
+  <h1>{% if query %}Resultados para "{{ query }}"{% else %}Buscar en el curso{% endif %}</h1>
+  <p>{% if query %}{{ total }} resultado{{ total|pluralize }}.{% else %}Escribe un término en la barra superior para buscar temas y módulos.{% endif %}</p>
+</header>
+
+{% if query and not total %}
+<p class="notice">No encontramos nada con ese término. Prueba con otra palabra, por ejemplo el nombre de un método (Newton, bisección) o un tema (errores, polinomios).</p>
+{% endif %}
+
+{% if results.topics %}
+<div class="section-heading"><div><h2>Temas de los módulos</h2></div></div>
+<div class="topic-grid">
+  {% for item in results.topics %}
+  <article class="panel topic-card">
+    <div class="card-top"><span class="module-icon"><i class="bi bi-{{ item.icon }}"></i></span><span class="subtle-pill">Módulo {{ item.module }} · {{ item.difficulty }}</span></div>
+    <h3>{{ item.title }}</h3><p>{{ item.description }}</p>
+    <a href="{{ item.url }}" class="card-link">Explorar <i class="bi bi-arrow-right"></i></a>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if results.modules %}
+<div class="section-heading"><div><h2>Módulos del curso</h2></div></div>
+<ol class="module-list">
+  {% for module in results.modules %}
+  <li>
+    <span class="index-number">{{ module.number|stringformat:'02d' }}</span>
+    <div>
+      <h3>{% if module.available %}<a href="{{ module.url }}">{{ module.title }}</a>{% else %}{{ module.title }}{% endif %}</h3>
+      <p>{{ module.description }}</p>
+    </div>
+    <span class="module-state">{% if module.available %}Disponible{% else %}En preparación{% endif %}</span>
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+{% endblock %}

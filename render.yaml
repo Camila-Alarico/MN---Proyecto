@@ -1,0 +1,32 @@
+databases:
+  - name: numlearn-db
+    databaseName: numlearn
+    user: numlearn
+    plan: basic-256mb
+services:
+  - type: web
+    name: numlearn
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    healthCheckPath: /health/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.12
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: NUMLEARN_DEBUG
+        value: "False"
+      - key: ALLOW_SQLITE
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: numlearn-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false

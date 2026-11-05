@@ -1,0 +1,27 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}Práctica de errores · NumLearn{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'js/nonlinear/activity.js' %}"></script>{% endblock %}
+{% block content %}
+{% if errors_focus %}<header class="study-heading compact"><span class="eyebrow">ERRORES NUMÉRICOS / PRÁCTICA GUIADA</span><h1>Calcula el error.<br>Decide si es aceptable.</h1><p>Trabaja con referencias positivas, negativas y cero. Compara escalas, redondeo y truncamiento; después interpreta la tolerancia.</p></header>{% else %}<header class="study-heading compact"><span class="eyebrow">OTROS TEMAS / PRÁCTICA</span><h1>Explora otros métodos.</h1><p>Estas actividades complementarias conservan su recorrido. <a href="{% url 'nonlinear:practice' %}">Volver a la práctica de errores →</a></p></header>{% endif %}
+<div id="activity" data-mode="practice" data-scope="{% if errors_focus %}errores{% else %}modulo{% endif %}" data-endpoint="/api/nonlinear/learning/practice/">
+<section id="activity-start" aria-label="Elige una práctica">
+  <ol class="practice-route" aria-label="Pasos de cada ejercicio"><li>Comprender</li><li>{% if errors_focus %}Elegir la medida{% else %}Elegir el método{% endif %}</li><li>Preparar los datos</li><li>Calcular</li><li>Comprobar</li></ol>
+  <div class="practice-browser"><div>{% if errors_focus %}<label for="practice-skill">¿Qué quieres reforzar?</label><select id="practice-skill"><option value="all">Todo el tema de errores</option><option value="medidas">Medidas y datos</option><option value="escala">Comparar escalas</option><option value="representacion">Redondeo y truncamiento</option><option value="limites">Tolerancia y casos límite</option></select>{% else %}<label for="practice-topic">Tema</label><select id="practice-topic"><option value="all">Todos los temas</option>{% for key,title in practice_topics.items %}<option value="{{ key }}">{{ title }}</option>{% endfor %}</select>{% endif %}</div><p id="practice-count" role="status">{{ exercises|length }} ejercicios disponibles</p></div>
+  <div class="practice-cards exercise-cards">
+  {% for exercise in exercises %}
+    <article class="practice-card exercise-card" data-exercise-topic="{{ exercise.topic }}" data-exercise-skill="{{ exercise.skill|default:'medidas' }}">
+      <span class="eyebrow">{{ exercise.method|upper }} · {{ exercise.level|default:'Inicial' }}</span>
+      <h2>{{ exercise.title }}</h2>
+      <p>{{ exercise.context|truncatewords:28 }}</p>
+      <div class="exercise-actions"><button class="btn btn-primary" data-start-topic="{{ exercise.topic }}" data-exercise="{{ exercise.id }}">Practicar →</button><a class="practice-reading" href="/ecuaciones-no-lineales/{{ exercise.topic }}/">Repasar teoría</a></div>
+    </article>
+  {% endfor %}
+  </div>
+  <button id="more-exercises" class="btn btn-light" type="button" hidden>Ver más ejercicios</button>
+  <details class="practice-bibliography"><summary>Fuentes y alcance de las actividades</summary><p>Ejercicios originales de NumLearn, fundamentados en <a href="https://fncbook.com/floating-point/" target="_blank" rel="noopener noreferrer"><em>Fundamentals of Numerical Computation</em>, de Driscoll y Braun</a>, y en la <a href="https://dmpeli.math.mcmaster.ca/Matlab/CLLsoftware/NumMethods/Lecture1-2.html" target="_blank" rel="noopener noreferrer">lección de McMaster sobre errores</a>. Las referencias decimales indicadas se toman como datos del ejercicio; no como valores exactos de constantes irracionales.</p></details>
+  <p class="activity-notice" role="note"><strong>Práctica individual:</strong> si sales de la pestaña o de la ventana mientras resuelves un ejercicio (también al recargar o cerrar la página), la práctica se bloquea y debes repetirla desde el inicio. Abre las fuentes y la teoría antes de empezar o al terminar.</p>
+</section>
+<div id="activity-work" hidden></div><p id="activity-error" class="activity-feedback error" role="alert" hidden></p>
+</div>
+<noscript><p class="notice">Activa JavaScript para comprobar tus respuestas. Puedes seguir leyendo la teoría.</p></noscript>
+{% endblock %}

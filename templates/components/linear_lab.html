@@ -1,0 +1,35 @@
+{# Laboratorio de sistemas lineales. `mode`: gauss | seidel | compare. Lo controla static/js/linear/lab.js. #}
+<div id="lab" class="lab-grid" data-mode="{{ mode }}" data-endpoint="/api/linear/{{ mode }}/">
+  <section class="panel configuration">
+    <div class="panel-heading"><h2><i class="bi bi-grid-3x3"></i> Sistema A·x = b</h2><span class="step-label">01</span></div>
+    <form id="lab-form" novalidate>
+      {% csrf_token %}
+      <div class="parameter-grid">
+        <div><label for="size">Tamaño</label><select id="size" name="size"><option value="2">2 × 2</option><option value="3" selected>3 × 3</option></select></div>
+        <div><label for="example">Ejemplo</label><select id="example"><option value="">Cargar…</option></select></div>
+      </div>
+      <p class="input-help" id="size-note" aria-live="polite"></p>
+      <label id="grid-label">Matriz de coeficientes A y vector de observaciones b</label>
+      <div id="matrix-grid" class="matrix-grid" role="group" aria-labelledby="grid-label"></div>
+      <small class="input-help">Números reales finitos (|valor| ≤ 10¹²). Usa punto decimal.</small>
+      {% if mode != 'gauss' %}
+      <div class="parameter-grid">
+        <div><label for="tolerance">Tolerancia</label><input id="tolerance" type="number" step="any" min="0.000000000001" max="0.1" value="0.000001"></div>
+        <div><label for="max_iterations">Máx. iteraciones</label><input id="max_iterations" type="number" min="1" max="200" value="100"></div>
+      </div>
+      <small class="input-help">Gauss-Seidel parte del vector cero.</small>
+      {% endif %}
+      <button id="execute" class="btn btn-primary w-100" type="submit"><i class="bi bi-play-fill"></i> Resolver</button>
+    </form>
+  </section>
+  <section class="panel">
+    <span class="eyebrow">QUÉ REPRESENTA</span>
+    <h3>Estimación de demanda de tres servicios</h3>
+    <p>Cada incógnita <strong>xᵢ</strong> es el <em>índice normalizado de demanda</em> del servicio i (1, 2 o 3). Cada fila de <strong>A</strong> indica cuánto pesa cada servicio en una medición agregada, y <strong>bᵢ</strong> es el valor observado de esa medición.</p>
+    <p id="system-meaning" aria-live="polite"></p>
+    <p class="input-help">En el caso base, A = (4 1 1; 1 5 1; 1 1 6), b = (9, 14, 21) y la solución exacta es x = (1, 2, 3).</p>
+  </section>
+</div>
+{% include 'components/alert.html' %}
+<div id="lab-results" aria-live="polite"><p class="notice">Introduce un sistema y pulsa «Resolver» para ver el procedimiento.</p></div>
+{{ examples|json_script:'linear-examples' }}

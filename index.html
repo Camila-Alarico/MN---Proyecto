@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistemas de ecuaciones lineales · Equipo 2</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/prueba.js" defer></script>
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">UNSA · Métodos Numéricos · Equipo 2</p>
+      <h1>Sistemas de ecuaciones lineales</h1>
+      <p>Primer prototipo · Semana 1 · v0.1</p>
+    </header>
+    <section class="intro" aria-labelledby="objetivo">
+      <h2 id="objetivo">Empezamos por los datos</h2>
+      <p>Un sistema se representa como <strong>A · x = b</strong>: A contiene los coeficientes,
+        b las observaciones conocidas y x las incógnitas.</p>
+      <p>Esta prueba recibe A y b, comprueba sus entradas y muestra los datos aceptados.
+        <strong>Todavía no calcula la solución ni el residuo.</strong> La eliminación gaussiana
+        con pivoteo parcial y Gauss-Seidel se implementarán en semanas posteriores.</p>
+    </section>
+    <section class="panel" aria-labelledby="entrada">
+      <h2 id="entrada">1. Introduce el sistema</h2>
+      <p id="ayuda">Completa todos los campos con números reales finitos. Usa punto para los
+        decimales (por ejemplo, −2.5 escrito como -2.5). También se admite 1e-6.</p>
+      <form id="formulario" novalidate>
+        <div class="toolbar">
+          <label for="tamano">Tamaño
+            <select id="tamano" aria-describedby="cambio-tamano">
+              <option value="2">2 × 2</option>
+              <option value="3" selected>3 × 3</option>
+            </select>
+          </label>
+          <button id="caso-base" class="secondary" type="button">Cargar caso base 3×3</button>
+        </div>
+        <p id="cambio-tamano" class="hint">Cambiar el tamaño deja los campos vacíos para un nuevo sistema.</p>
+        <div class="entradas">
+          <fieldset>
+            <legend>Matriz A</legend>
+            <div id="matriz" class="matrix"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Vector b</legend>
+            <div id="vector" class="vector"></div>
+          </fieldset>
+        </div>
+        <p class="hint">El caso base representa una estimación didáctica de demanda de tres
+          servicios. Sus incógnitas son índices normalizados; los datos son sintéticos.</p>
+        <button type="submit">Probar datos</button>
+      </form>
+    </section>
+    <section class="panel" aria-labelledby="salida">
+      <h2 id="salida">2. Resultado de la prueba</h2>
+      <div id="estado" role="status" aria-live="polite" aria-atomic="true">
+        <p id="mensaje">Caso base cargado. Pulsa «Probar datos» para comprobarlo.</p>
+        <pre id="resultado" hidden></pre>
+      </div>
+      <p class="hint">Aceptar los datos no demuestra que el sistema tenga solución única
+        ni que un método iterativo converja.</p>
+    </section>
+    <footer>Prototipo técnico de Tania Ayque · B / Programación numérica<br>
+      Diseño didáctico e integración del equipo: en desarrollo.</footer>
+    <noscript>Activa JavaScript en tu navegador para ejecutar la función de prueba.</noscript>
+  </main>
+</body>
+</html>

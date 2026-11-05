@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}{% if favorites %}Favoritos{% else %}Mi progreso{% endif %} · NumLearn{% endblock %}
+{% block content %}
+<header class="method-header">
+  <div>
+    <span class="eyebrow">CADA PASO SUMA</span>
+    <h1>{% if favorites %}Tus favoritos{% else %}Mi progreso{% endif %}</h1>
+  </div>
+  {% include 'components/progress_indicator.html' %}
+</header>
+
+{% if not user.is_authenticated %}
+<p class="notice">Tu progreso de invitado se guarda en esta sesión. <a href="{% url 'register' %}">Regístrate</a> o <a href="{% url 'login' %}">inicia sesión</a> para conservarlo: los temas que completes ahora se trasladarán a tu cuenta.</p>
+{% endif %}
+
+{% if not favorites %}
+<section class="panel" aria-labelledby="topics-heading">
+  <div class="panel-heading"><h2 id="topics-heading"><i class="bi bi-check2-square"></i> Temas del módulo</h2><span class="step-label">{{ completed_count }} de {{ topics|length }} completados</span></div>
+  <ul class="topic-checklist">
+    {% for item in topics %}
+    <li class="{% if item.completed %}is-complete{% endif %}">
+      <span class="topic-mark" aria-hidden="true">{% if item.completed %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+      <a href="{% url 'nonlinear:page' item.slug %}">{{ item.title }}</a>
+      <span class="visually-hidden">{% if item.completed %}completado{% else %}pendiente{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% endif %}
+
+{% if not favorites %}
+<section class="panel" aria-labelledby="linear-topics-heading">
+  <div class="panel-heading"><h2 id="linear-topics-heading"><i class="bi bi-check2-square"></i> Temas del módulo 2 · Sistemas lineales</h2><span class="step-label">{{ linear_completed_count }} de {{ linear_topics|length }} completados</span></div>
+  <ul class="topic-checklist">
+    {% for item in linear_topics %}
+    <li class="{% if item.completed %}is-complete{% endif %}">
+      <span class="topic-mark" aria-hidden="true">{% if item.completed %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+      <a href="{% url 'linear:page' item.slug %}">{{ item.title }}</a>
+      <span class="visually-hidden">{% if item.completed %}completado{% else %}pendiente{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="panel" aria-labelledby="history-heading">
+  <div class="panel-heading"><h2 id="history-heading"><i class="bi bi-clock-history"></i> {% if favorites %}Cálculos favoritos{% else %}Historial del laboratorio{% endif %}</h2>
+    {% if user.is_authenticated and not favorites %}<span class="step-label">Últimos 30 · cálculos repetidos se agrupan</span>{% endif %}</div>
+  <div class="table-scroll">
+    <table class="table">
+      <thead><tr><th scope="col">Fecha</th><th scope="col">Método</th><th scope="col">Función</th><th scope="col">Aproximación</th><th scope="col">Pasos</th><th scope="col">Estado</th><th scope="col">Repetir</th><th scope="col">Favorito</th><th scope="col">Eliminar</th></tr></thead>
+      <tbody>
+        {% for row in history %}
+        <tr>
+          <td>{{ row.item.created_at|date:'d/m H:i' }}</td>
+          <td>{{ row.method_title }}</td>
+          <td><code>{{ row.item.function_expression }}</code></td>
+          <td>{% if row.root is not None %}{{ row.root|floatformat:'8u' }}{% else %}—{% endif %}</td>
+          <td>{{ row.iterations|default_if_none:'—' }}</td>
+          <td><span class="status {% if row.item.result.converged %}status-success{% else %}status-warning{% endif %}">{{ row.status }}</span></td>
+          <td><a class="table-link" href="{{ row.url }}">Abrir ↗</a></td>
+          <td>
+            <form method="post" action="{% url 'toggle-favorite' row.item.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+              <button class="btn btn-light btn-icon" aria-label="{% if row.item.favorite %}Quitar de favoritos{% else %}Marcar como favorito{% endif %}" aria-pressed="{{ row.item.favorite|yesno:'true,false' }}">{% if row.item.favorite %}★{% else %}☆{% endif %}</button>
+            </form>
+          </td>
+          <td>
+            <form method="post" action="{% url 'delete-history' row.item.pk %}" onsubmit="return confirm('¿Eliminar este cálculo del historial?')">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+              <button class="btn btn-light btn-icon" aria-label="Eliminar cálculo"><i class="bi bi-trash" aria-hidden="true"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9">{% if user.is_authenticated %}Tu próxima simulación puede ser el primer descubrimiento de esta lista.{% else %}Inicia sesión para guardar tus cálculos.{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<a class="btn btn-primary" href="{{ simulator_urls.bisection }}">Abrir el simulador</a>
+{% endblock %}
