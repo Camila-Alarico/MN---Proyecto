@@ -1,0 +1,59 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}{{ lesson.title }} · Unidad {{ unit.number }} · NumLearn{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'js/temario/lesson.js' %}"></script>{% endblock %}
+{% block content %}
+<div class="temario-lesson unit-accent-{{ unit.accent }}" data-lesson="{{ lesson.slug }}">
+{% include 'components/lesson_header.html' %}
+<nav class="lesson-nav" data-method-tabs aria-label="Secciones de la lección"><a href="#teoria" data-panel="theory">Teoría</a><a href="#ejercicio-resuelto" data-panel="example">Ejercicio resuelto</a><a href="#laboratorio" data-panel="laboratory">Laboratorio</a><a href="#comprueba" data-panel="check">Comprueba</a></nav>
+
+<section id="teoria" class="lesson-intro" data-method-panel="theory">
+  <div><span class="eyebrow">LA IDEA</span><h2>¿De qué trata?</h2>{% for paragraph in lesson.idea %}<p>{{ paragraph|safe }}</p>{% endfor %}
+    <div class="lesson-note"><strong>Al terminar podrás</strong><ul class="goal-list">{% for goal in lesson.goals %}<li>{{ goal }}</li>{% endfor %}</ul></div>
+    <p class="syllabus-note"><i class="bi bi-journal-text" aria-hidden="true"></i> <span>Sílabo: {{ week_title }}</span></p></div>
+  <div class="equation-sheet"><span class="eyebrow">FÓRMULAS CLAVE</span>{% for label, tex in lesson.formulas %}<div class="equation-row equation-row-stacked"><span>{{ label }}</span><div class="formula">\[{{ tex }}\]</div></div>{% endfor %}</div>
+</section>
+<section class="lesson-section" data-method-panel="theory" aria-labelledby="algorithm-title"><span class="eyebrow">PROCEDIMIENTO</span><h2 id="algorithm-title">Paso a paso</h2>
+  <ol class="algorithm-steps">{% for step in lesson.algorithm %}<li><span class="algorithm-index" aria-hidden="true">{{ forloop.counter }}</span><p>{{ step|safe }}</p></li>{% endfor %}</ol>
+  <p class="panel-jump"><a class="btn btn-light" href="#ejercicio-resuelto" data-jump="example">Ver un ejercicio resuelto →</a> <a class="btn btn-primary" href="#laboratorio" data-jump="laboratory">Probar en el laboratorio →</a></p>
+</section>
+<section class="lesson-section" data-method-panel="theory"><h2>Evita estas confusiones</h2><div class="disclosure-stack">{% for question, answer in lesson.pitfalls %}<details class="disclosure"><summary>{{ question }}</summary><div class="disclosure-content"><p>{{ answer }}</p></div></details>{% endfor %}</div></section>
+
+{% with ex=lesson.example %}
+<section class="panel worked-example" id="ejercicio-resuelto" data-method-panel="example" aria-labelledby="worked-title">
+  <span class="eyebrow">EJERCICIO RESUELTO</span>
+  <h2 id="worked-title">{{ ex.title }}</h2>
+  <p>{{ ex.statement }}</p>
+  <div class="formula">\[{{ ex.setup_tex }}\]</div>
+  <div class="worked-grid">
+    <ol class="worked-list worked-reveal" data-reveal>{% for label, text in ex.steps %}<li><strong>{{ label }}</strong> <span>{{ text }}</span></li>{% endfor %}</ol>
+    <div class="table-scroll"><table class="table"><caption>Valores redondeados a seis decimales</caption>
+      <thead><tr>{% for header in ex.columns %}<th scope="col">{{ header }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for row in ex.rows %}<tr>{% for value in row %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div class="lesson-note"><strong>Qué aprender de este ejercicio</strong><p>{{ ex.conclusion }}</p></div>
+  <p class="worked-actions"><a class="btn btn-primary" href="#laboratorio" data-jump="laboratory">Reproducir en el laboratorio <i class="bi bi-play-fill"></i></a> <span class="input-help">El laboratorio abre con estos mismos datos.</span></p>
+</section>
+{% endwith %}
+
+<section id="laboratorio" class="lesson-section lab-section" data-method-panel="laboratory" aria-labelledby="lab-title">
+  <div class="section-heading"><div><span class="eyebrow">LABORATORIO</span><h2 id="lab-title">{{ lesson.lab.title }}</h2><p>{{ lesson.lab.intro }}</p></div></div>
+  <div class="lab" data-lab="{{ lesson.lab.kind }}" data-testid="lab"><p class="lab-loading"><span class="spinner" aria-hidden="true"></span> Preparando el laboratorio…</p></div>
+</section>
+
+<section id="comprueba" class="lesson-section" data-method-panel="check" aria-labelledby="check-title"><span class="eyebrow">COMPRUEBA</span><h2 id="check-title">¿Quedó claro?</h2>
+  <p class="check-intro">Elige una respuesta: sabrás al instante si es correcta y por qué.</p>
+  <div class="quick-check" data-quick-check>{% for item in lesson.quiz %}
+    <fieldset class="check-card" data-answer="{{ item.answer }}"><legend><span class="check-number">{{ forloop.counter }}</span> {{ item.q }}</legend>
+      <div class="check-options">{% for option in item.options %}<button type="button" class="check-option" data-index="{{ forloop.counter0 }}"><span class="check-letter" aria-hidden="true">{{ forloop.counter0|add:65|stringformat:'c' }}</span><span>{{ option }}</span><i class="check-icon bi" aria-hidden="true"></i></button>{% endfor %}</div>
+      <p class="check-feedback" role="status" aria-live="polite" hidden data-why="{{ item.why }}"></p></fieldset>{% endfor %}
+    <p class="check-score" id="check-score" role="status" aria-live="polite" hidden></p>
+  </div>
+  <div class="complete-box{% if completed %} is-done{% endif %}" id="complete-box">
+    <div><strong id="complete-title">{% if completed %}Lección completada{% else %}¿Terminaste esta lección?{% endif %}</strong><p id="complete-text">{% if completed %}Ya cuenta en tu avance de la unidad {{ unit.number }}.{% else %}Márcala para registrar tu avance en la unidad {{ unit.number }}.{% endif %}</p></div>
+    <button type="button" class="btn {% if completed %}btn-light{% else %}btn-primary{% endif %}" id="complete-lesson" data-endpoint="{% url 'temario:progress' %}" data-topic="{{ lesson.slug }}" data-completed="{{ completed|yesno:'1,0' }}" aria-pressed="{{ completed|yesno:'true,false' }}">{% if completed %}Marcar como pendiente{% else %}Marcar como completada{% endif %}</button>
+  </div>
+</section>
+
+
+</div>
+{% endblock %}

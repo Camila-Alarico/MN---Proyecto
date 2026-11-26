@@ -58,6 +58,13 @@ main { max-width: 1536px; padding: 36px 44px 56px; }
 .avatar { background: #eeebfa; color: #5746bb; border-radius: 3px; }
 .popover-card { border-radius: 3px; box-shadow: 0 4px 15px #172c4312; }
 .footer { color: var(--muted); font-size: .6875rem; margin: 0 44px; padding: 20px 0; }
+.footer-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 18px; }
+.footer-group { margin-top: 10px; }
+.footer-group strong { display: block; font-weight: 600; }
+.footer-members { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 22px; list-style: none; margin: 4px 0 0; padding: 0; }
+.footer-members li { margin: 0; line-height: 1.5; }
+.footer-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; font-size: .625rem; opacity: .8; }
+.footer-meta a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 
 /* Forms and numeric data share one scale. */
 .panel { border-radius: 4px; box-shadow: none; padding: 24px; }
@@ -266,6 +273,7 @@ input[type=range] { width: 100%; min-height: 44px; padding: 0!important; border:
   .control-card { padding: 22px; }
   .table-scroll { max-height: 340px; }
   .footer { margin: 0 18px; }
+  .footer-members { grid-template-columns: 1fr; }
 }
 
 /* Original navy/violet identity, on the quieter navigation structure. */

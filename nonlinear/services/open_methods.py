@@ -2,7 +2,7 @@ from .parser import parse_function, finite, MathInputError
 from .common import controls, result, near_zero, num
 
 
-def solve_open(method, expression, x0, tolerance=0.0001, max_iterations=100, x1=None):
+def solve_open(method, expression, x0, tolerance=0.000001, max_iterations=100, x1=None):
     tol, count = controls(tolerance, max_iterations)
     f = parse_function(expression)
     x = finite(x0, 'x0')

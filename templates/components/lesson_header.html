@@ -1,0 +1,5 @@
+<header class="method-header lesson-header temario-header">
+  <div><span class="eyebrow unit-eyebrow"><span class="unit-dot" aria-hidden="true"></span>UNIDAD {{ temario_unit.number|stringformat:'02d' }} </span><h1>{{ course_entry.title }}</h1><p>{{ course_entry.summary }}</p></div>
+  <span class="completion-chip{% if course_entry.completed %} is-done{% endif %}" id="completion-chip" aria-live="polite"><i class="bi {% if course_entry.completed %}bi-check-circle-fill{% else %}bi-circle{% endif %}" aria-hidden="true"></i> <span>{% if course_entry.completed %}Completada{% else %}En curso{% endif %}</span></span>
+</header>
+<nav class="unit-rail" aria-label="Contenidos de la unidad {{ temario_unit.number }}">{% for item in course_siblings %}<a href="{{ item.url }}" class="unit-rail-item{% if item.completed %} is-done{% endif %}" {% if item.slug == course_entry.slug %}aria-current="page"{% endif %} data-slug="{{ item.slug }}"><span class="rail-mark" aria-hidden="true">{% if item.completed %}✓{% else %}{{ forloop.counter }}{% endif %}</span><span>{{ item.title }}</span></a>{% endfor %}</nav>

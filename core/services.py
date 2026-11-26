@@ -1,11 +1,12 @@
 """Reglas de negocio de cuentas y progreso, independientes de las vistas."""
 from linear.catalog import TOPIC_SLUGS as LINEAR_SLUGS, TOPICS as LINEAR_TOPICS
 from nonlinear.catalog import TOPICS
+from temario.catalog import LESSON_SLUGS
 
 from .models import UserProgress
 
 SESSION_TOPICS_KEY = 'completed_topics'
-VALID_TOPICS = {slug for slug, *_ in TOPICS} | {slug for slug, *_ in LINEAR_TOPICS}
+VALID_TOPICS = {slug for slug, *_ in TOPICS} | {slug for slug, *_ in LINEAR_TOPICS} | LESSON_SLUGS
 
 
 def adopt_session_progress(request, user):
@@ -19,7 +20,7 @@ def adopt_session_progress(request, user):
     for topic in topics:
         progress, was_created = UserProgress.objects.get_or_create(
             user=user,
-            module='linear' if topic in LINEAR_SLUGS else 'nonlinear',
+            module='temario' if topic in LESSON_SLUGS else 'linear' if topic in LINEAR_SLUGS else 'nonlinear',
             topic=topic,
             defaults={'completed': True, 'progress_percentage': 100},
         )

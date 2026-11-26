@@ -64,7 +64,7 @@ def navigation(request):
     path = request.path
     section = ('practice' if '/practica/' in path else 'assessment' if '/autoevaluacion/' in path or path.startswith('/evaluacion/')
                else 'resources' if path == '/recursos/' else 'theory' if path.startswith(('/ecuaciones-no-lineales/', '/sistemas-lineales/', '/teoria/')) else 'home')
-    errors_focus = (path in ('/', '/ecuaciones-no-lineales/errores/', '/ecuaciones-no-lineales/teoria/', '/ecuaciones-no-lineales/practica/', '/ecuaciones-no-lineales/autoevaluacion/')
+    errors_focus = (path in ('/ecuaciones-no-lineales/errores/', '/ecuaciones-no-lineales/teoria/', '/ecuaciones-no-lineales/practica/', '/ecuaciones-no-lineales/autoevaluacion/')
                     and request.GET.get('vista') != 'modulo'
                     and request.GET.get('tema', 'errores') == 'errores')
     return {

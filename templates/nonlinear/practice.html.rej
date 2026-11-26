@@ -1,0 +1,4 @@
+diff a/templates/nonlinear/practice.html b/templates/nonlinear/practice.html	(rejected hunks)
+@@ -5 +5 @@
+-<header class="study-heading compact"><span class="eyebrow">EJERCICIOS GUIADOS{% if selected_topic_title %} · {{ selected_topic_title|upper }}{% endif %}</span><h1>{% if selected_topic_title %}Practica {{ selected_topic_title|lower }}{% else %}Práctica por temas{% endif %}</h1><p>Identifica los datos, calcula cada paso y explica tu resultado. Puedes volver a la lección sin perder tu avance.</p></header>
++<header class="study-heading compact"><span class="eyebrow">EJERCICIOS GUIADOS{% if selected_topic_title %} · {{ selected_topic_title|upper }}{% endif %}</span><h1>{% if selected_topic_title %}Práctica de {{ selected_topic_title|lower }}{% else %}Práctica por temas{% endif %}</h1><p>Identifica los datos, calcula cada paso y explica tu resultado. Puedes volver a la lección sin perder tu avance.</p></header>

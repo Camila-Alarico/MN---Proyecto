@@ -3,7 +3,7 @@
 Principios (el objetivo es demostrar comprensión, no solo obtener una respuesta):
   * Las respuestas correctas nunca viajan al navegador antes de contestar.
   * Los problemas paso a paso usan datos distintos en cada intento (semilla guardada en el servidor).
-  * No se puede avanzar sin completar el paso (o la pregunta) anterior; el servidor lo impone.
+  * Toda la evaluación son problemas por etapas: no se puede avanzar sin validar la etapa anterior; el servidor lo impone.
   * Las respuestas abiertas se puntúan con una rúbrica de conceptos y se valoran con una rúbrica de conceptos.
   * Se registran salidas de la pestaña, pegados, copias y recargas como INDICADORES, no como prueba.
 """
@@ -26,16 +26,24 @@ MAX_STEP_TRIES = 3
 STEP_POINTS = {1: 1.0, 2: 0.5, 3: 0.25}
 MAX_TEXT = 2000
 
-# (selección múltiple, respuesta abierta, problemas paso a paso): teoría primero, práctica al final.
+# Cada evaluación es una secuencia de PROBLEMAS POR ETAPAS (`problems` = cuántos). Dentro de un problema, la etapa
+# siguiente permanece bloqueada hasta validar la actual. Las claves (`unidad-2`, `modulo-2`…) son las de las URL
+# `?alcance=`: se conservan aunque la numeración de las unidades del curso haya cambiado.
 SCOPES = {
-    'errores': {'title': 'Solo errores numéricos · Tema del módulo 1', 'topics': ('errores',), 'mix': (4, 3, 3),
-                'description': 'Evaluación específica de medidas de error, origen del error y tolerancia.'},
-    'modulo-1': {'title': 'Módulo 1 · Ecuaciones no lineales y errores', 'topics': MODULE_1, 'mix': (5, 3, 3),
-                 'description': 'Evalúa el módulo completo: errores, separación de raíces, bisección, falsa posición, Newton-Raphson, secante y raíces múltiples.'},
-    'modulo-2': {'title': 'Módulo 2 · Sistemas lineales', 'topics': MODULE_2, 'mix': (4, 3, 3),
-                 'description': 'Evalúa el módulo completo: formulación, métodos directos, pivoteo, Jacobi, Gauss-Seidel y convergencia.'},
-    'curso': {'title': 'Todo el curso (módulos 1 y 2)', 'topics': MODULE_1 + MODULE_2, 'mix': (5, 3, 3),
-              'description': 'Preguntas de ambos módulos.'},
+    'errores': {'title': 'Unidad 1 · Errores', 'topics': ('errores',), 'problems': 3,
+                'description': 'Problemas por etapas de medidas de error, origen del error y tolerancia.'},
+    'modulo-1': {'title': 'Errores y raíces · Unidades 1 y 3', 'topics': MODULE_1, 'problems': 4,
+                 'description': 'Problemas por etapas de errores y raíces: bisección, falsa posición, punto fijo, Newton y secante. No incluye Taylor ni exactitud y precisión.'},
+    'unidad-2': {'title': 'Unidad 3 · Raíces de ecuaciones', 'topics': tuple(t for t in MODULE_1 if t != 'errores'), 'problems': 3,
+                 'description': 'Problemas por etapas de raíces de ecuaciones y métodos numéricos, sin incluir errores.'},
+    'modulo-2': {'title': 'Unidad 4 · Sistemas lineales', 'topics': MODULE_2, 'problems': 3,
+                 'description': 'Problemas por etapas de eliminación gaussiana y Gauss-Seidel.'},
+    'unidad-2-aproximacion': {'title': 'Unidad 2 · Aproximación', 'topics': ('aproximacion',), 'problems': 2, 'description': 'Taylor, truncamiento, redondeo y exactitud.'},
+    'unidad-5': {'title': 'Unidad 5 · Ajuste de curvas', 'topics': ('ajuste-curvas',), 'problems': 2, 'description': 'Ajuste lineal e interpolación.'},
+    'unidad-6': {'title': 'Unidad 6 · Integración y derivación', 'topics': ('integracion-derivacion',), 'problems': 2, 'description': 'Regla trapezoidal y diferencia central.'},
+    'unidad-7': {'title': 'Unidad 7 · Ecuaciones diferenciales', 'topics': ('edo',), 'problems': 2, 'description': 'Métodos de Euler y Euler modificado.'},
+    'curso': {'title': 'Evaluación conjunta · Unidades 1, 3 y 4', 'topics': MODULE_1 + MODULE_2, 'problems': 4,
+              'description': 'Combina problemas por etapas de errores, raíces y sistemas lineales. No abarca todas las lecciones nuevas.'},
 }
 PHASES = {'multi': 'Conceptos', 'open': 'Explicación', 'steps': 'Problema paso a paso'}
 
@@ -78,22 +86,19 @@ def _pick(pool, count, rng, avoid=frozenset()):
 
 
 def compose(scope, rng=None, avoid=frozenset()):
-    """Arma un intento nuevo: mezcla de formatos, preguntas distintas a las recientes y opciones barajadas."""
+    """Arma un intento nuevo: solo problemas por etapas, repartidos entre temas y distintos a los recientes.
+
+    Antes un intento mezclaba preguntas sueltas (selección múltiple y abiertas, que se podían responder sin
+    acertar) con algunos problemas por etapas. Ahora todo el intento avanza etapa por etapa: el servidor no
+    habilita la siguiente hasta validar la actual (`_submit_steps`). Los tipos `multi` y `open` siguen
+    soportados al mostrar y corregir intentos antiguos que estaban en curso o terminados.
+    """
     rng = rng or random.SystemRandom()
     info = SCOPES[scope]
     topics = set(info['topics'])
-    plan = []
-    for pool, count in zip((MULTI, OPEN, STEPS), info['mix']):
-        for q in _pick([q for q in pool if q['topic'] in topics], count, rng, avoid):
-            entry = {'id': q['id'], 'seed': rng.getrandbits(32)}
-            if q['type'] == 'multi':
-                order = list(range(len(q['options'])))
-                rng.shuffle(order)
-                entry['order'] = order
-            plan.append(entry)
-    # Los formatos se intercalan en un orden nuevo en cada intento; no quedan
-    # primero todas las preguntas de selección, luego las abiertas, etc.
-    rng.shuffle(plan)
+    pool = [q for q in STEPS if q['topic'] in topics]
+    plan = [{'id': q['id'], 'seed': rng.getrandbits(32)} for q in _pick(pool, info['problems'], rng, avoid)]
+    rng.shuffle(plan)  # el orden de los problemas cambia en cada intento
     return plan
 
 
@@ -154,7 +159,7 @@ def _steps_view(attempt, index, entry, question):
 def question_view(attempt, index):
     entry = attempt.plan[index]
     q = BANK[entry['id']]
-    view = {'index': index, 'type': q['type'], 'topic': q['topic'],
+    view = {'index': index, 'total': len(attempt.plan), 'type': q['type'], 'topic': q['topic'],
             'phase': PHASES[q['type']], 'source': _source(q['topic']), 'prompt': q['prompt']}
     if q['type'] == 'multi':
         view['options'] = [q['options'][i] for i in entry['order']]
@@ -375,9 +380,12 @@ def finish_attempt(attempt):
         attempt.finished_at = timezone.now()
         attempt.save(update_fields=['finished_at'])
         recompute(attempt)
+    from .scoring import course_score  # importación tardía: scoring consulta Attempt y el catálogo del temario
+    cumulative = course_score(attempt.user, attempt.session_key)
     return {'success': True, 'attempt': str(attempt.id), 'scope': attempt.scope, 'scope_title': SCOPES[attempt.scope]['title'], 'done': True,
             'points': attempt.points, 'percent': round(100 * attempt.points / max(attempt.total, 1)),
-            'passed': attempt.passed, 'pass_percent': round(PASS_RATIO * 100), 'wrong': len(wrong_answers(attempt))}
+            'passed': attempt.passed, 'pass_percent': round(PASS_RATIO * 100), 'wrong': len(wrong_answers(attempt)),
+            'cumulative': {key: cumulative[key] for key in ('percent', 'taken', 'available')}}
 
 
 def review_attempt(attempt):

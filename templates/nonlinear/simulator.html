@@ -2,7 +2,7 @@
 {% block title %}{{ method.title }} · {{ family.title }} · NumLearn{% endblock %}
 {% block scripts %}<script type="module" src="{% static 'js/nonlinear/simulator.js' %}"></script>{% endblock %}
 {% block content %}
-<div class="breadcrumb-line"><a href="/ecuaciones-no-lineales/">Módulo 1</a> / <a href="{% url 'nonlinear:page' family.default_slug %}">{{ family.title }}</a> / {{ method.title }}</div>
+
 
 <header class="method-header">
   <div>
@@ -64,7 +64,7 @@
       </fieldset>
       <fieldset class="solver-precision"><legend>Precisión y límite</legend>
         <div class="parameter-grid">
-          <div><label for="tolerance">Tolerancia</label><input id="tolerance" name="tolerance" type="number" step="any" min="0.000000000001" max="0.1" value="0.0001" required></div>
+          <div><label for="tolerance">Tolerancia</label><input id="tolerance" name="tolerance" type="number" step="any" min="0.000000000001" max="0.1" value="0.000001" required></div>
           <div><label for="max_iterations">Máximo de iteraciones</label><input id="max_iterations" name="max_iterations" type="number" min="1" max="200" value="100" required></div>
         </div>
       </fieldset>

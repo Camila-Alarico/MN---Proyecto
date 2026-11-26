@@ -1,9 +1,7 @@
 """Configuración de NumLearn.
 
-Las variables se leen desde el entorno o desde `.env` (django-environ). Consulta el
-README para los valores de desarrollo y producción. Este archivo no cambia el
-comportamiento de la versión anterior: solo añade LOGGING, CACHES (para el límite
-de peticiones de la API), correo (recuperación de contraseña) y formato legible.
+Las variables se leen desde el entorno o desde `.env` en desarrollo. Vercel usa
+su entorno de producción, dominios de despliegue y PostgreSQL remoto.
 """
 from pathlib import Path
 
@@ -13,12 +11,14 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(DEBUG=(bool, False), ALLOW_SQLITE=(bool, False))
-environ.Env.read_env(BASE_DIR / '.env')
+IS_VERCEL = env('VERCEL', default='') == '1'
+if not IS_VERCEL:
+    environ.Env.read_env(BASE_DIR / '.env')
 
 # --- Seguridad básica -------------------------------------------------------
 
 # NUMLEARN_DEBUG prevalece sobre un DEBUG global del sistema.
-DEBUG = env.bool('NUMLEARN_DEBUG', default=env('DEBUG'))
+DEBUG = False if IS_VERCEL else env.bool('NUMLEARN_DEBUG', default=env('DEBUG'))
 
 SECRET_KEY = env('SECRET_KEY', default='')
 if not SECRET_KEY or (not DEBUG and (len(SECRET_KEY) < 50 or SECRET_KEY.startswith('replace-'))):
@@ -26,13 +26,35 @@ if not SECRET_KEY or (not DEBUG and (len(SECRET_KEY) < 50 or SECRET_KEY.startswi
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
+if IS_VERCEL:
+    # URLs del sistema de Vercel, sin esquema. No se admite cualquier *.vercel.app.
+    deployment_hosts = [
+        env(name, default='').strip()
+        for name in ('VERCEL_URL', 'VERCEL_PROJECT_PRODUCTION_URL', 'VERCEL_BRANCH_URL')
+    ]
+    deployment_hosts = [host for host in deployment_hosts if host]
+    ALLOWED_HOSTS = list(dict.fromkeys([*ALLOWED_HOSTS, *deployment_hosts]))
+    CSRF_TRUSTED_ORIGINS = list(dict.fromkeys([
+        *CSRF_TRUSTED_ORIGINS, *(f'https://{host}' for host in deployment_hosts),
+    ]))
 
 # --- Base de datos ----------------------------------------------------------
 
-if env('DATABASE_URL', default=''):
-    DATABASES = {'default': env.db()}
+database_url = env('DATABASE_URL', default='')
+if IS_VERCEL and not database_url:
+    database_url = env('POSTGRES_URL', default='')
+if database_url:
+    DATABASES = {'default': env.db_url_config(database_url)}
     if DATABASES['default']['ENGINE'] != 'django.db.backends.postgresql':
         raise ImproperlyConfigured('DATABASE_URL debe apuntar a PostgreSQL.')
+    if IS_VERCEL:
+        # Compatible con conexiones agrupadas (Neon/PgBouncer) y funciones efímeras.
+        DATABASES['default'].update(
+            CONN_MAX_AGE=0, CONN_HEALTH_CHECKS=True, DISABLE_SERVER_SIDE_CURSORS=True,
+        )
+        options = DATABASES['default'].setdefault('OPTIONS', {})
+        options.setdefault('connect_timeout', 10)
+        options.setdefault('sslmode', 'require')
 elif DEBUG and env('ALLOW_SQLITE'):
     DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'db.sqlite3'}}
 else:
@@ -53,6 +75,7 @@ INSTALLED_APPS = [
     'nonlinear',
     'linear',
     'assessment',
+    'temario',
 ]
 
 MIDDLEWARE = [
@@ -79,6 +102,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.navigation',
+                'temario.context_processors.temario',
             ]
         },
     }

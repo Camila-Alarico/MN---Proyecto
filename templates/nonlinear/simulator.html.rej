@@ -1,0 +1,4 @@
+diff a/templates/nonlinear/simulator.html b/templates/nonlinear/simulator.html	(rejected hunks)
+@@ -67 +67 @@
+-          <div><label for="tolerance">Tolerancia</label><input id="tolerance" name="tolerance" type="number" step="any" min="0.000000000001" max="0.1" value="0.0001" required></div>
++          <div><label for="tolerance">Tolerancia</label><input id="tolerance" name="tolerance" type="number" step="any" min="0.000000000001" max="0.1" value="0.000001" required></div>

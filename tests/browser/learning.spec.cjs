@@ -29,21 +29,20 @@ async function choose(page, choice) {
   const answer = await check(page, {choice}); expect(answer.correct).toBe(true); await next(page); return answer;
 }
 
-test('inicio muestra tres actividades y el espacio personal queda cerrado', async ({page}, info) => {
+test('el curso muestra las unidades y su avance sin accesos personales secundarios', async ({page}, info) => {
   await page.goto('/');
-  await expect(page.locator('.primary-learning a')).toHaveCount(5);
+  await expect(page.locator('.primary-learning a')).toHaveCount(2);
   await expect(page.locator('.primary-learning')).not.toContainText('Mi progreso');
   await expect(page.getByRole('link', {name: 'Mis apuntes', exact: true})).toBeHidden();
-  await expect(page.locator('.home-paths')).toContainText('Práctica guiada');
-  await expect(page.locator('.home-paths')).toContainText('Autoevaluación');
+  await expect(page.locator('.unit-block')).toHaveCount(6);
+  await expect(page.locator('#unidad-2')).toContainText('Evaluar raíces de ecuaciones');
   await page.screenshot({path: info.outputPath('inicio-escritorio.png'), fullPage: true});
 });
 
-test('la teoría conserva seis temas y enlaces a todos los métodos', async ({page}) => {
-  await page.goto('/ecuaciones-no-lineales/teoria/?vista=modulo');
-  await expect(page.locator('.study-topic')).toHaveCount(6);
-  await expect(page.locator('.topic-strip a')).toHaveCount(6);
-  await expect(page.getByRole('link', {name: 'Newton-Raphson', exact: true})).toBeVisible();
+test('el curso reúne los métodos de raíces en su unidad', async ({page}) => {
+  await page.goto('/');
+  await expect(page.locator('#unidad-2')).toContainText('Bisección');
+  await expect(page.locator('#unidad-2').getByRole('link', {name: /Newton-Raphson/})).toBeVisible();
 });
 
 test('las pestañas separan teoría, ejemplo y calculadora, con teclado y enlaces reproducibles', async ({page}) => {
@@ -130,32 +129,42 @@ test('salir de la pestaña bloquea la práctica y al volver se muestra el aviso'
   await expect(page.locator('.activity-top')).toContainText('Paso 1 de 5');
 });
 
-test('autoevaluación mezcla formatos, no permite repetir y registra la salida de la pestaña', async ({page}) => {
+test('autoevaluación conserva una salida breve y reinicia tras más de cinco segundos sin eventos docentes', async ({page}) => {
   const events = [];
   page.on('request', r => { const d = r.method() === 'POST' && r.url().includes('/evaluacion/api/') ? r.postDataJSON() : null; if (d?.action === 'event') events.push(d.kind); });
   await page.goto('/ecuaciones-no-lineales/autoevaluacion/');
-  await page.locator('#student-name').fill('Alumno de prueba');
-  await page.getByRole('button', {name: /Empezar autoevaluación/}).click();
-  await expect(page.locator('.activity-top')).toContainText('Pregunta 1 de 10');
-  expect(await page.locator('.multi-options input[type=checkbox]').count()).toBeGreaterThanOrEqual(5);
-  await page.evaluate(() => { Object.defineProperty(document, 'hidden', {configurable: true, get: () => true}); document.dispatchEvent(new Event('visibilitychange')); });
-  await page.evaluate(() => { Object.defineProperty(document, 'hidden', {configurable: true, get: () => false}); document.hasFocus = () => true; document.dispatchEvent(new Event('visibilitychange')); });
-  await expect(page.locator('.assess-banner')).toContainText('Se registró que saliste');
-  await expect.poll(() => events).toEqual(expect.arrayContaining(['leave', 'return']));
-  await page.locator('.multi-options input').first().check();
-  await page.getByRole('button', {name: 'Comprobar respuesta'}).click();
-  await expect(page.locator('.multi-options input').first()).toBeDisabled();
-  await page.getByRole('button', {name: /Continuar →/}).click();
-  await expect(page.locator('.activity-top')).toContainText('Pregunta 2 de 10');
+  const started = page.waitForResponse(r => r.url().includes('/evaluacion/api/') && r.request().postDataJSON()?.action === 'start');
+  await page.locator('#start-assessment').click();
+  const initial = await (await started).json();
+  await expect(page.locator('.activity-top')).toContainText('Pregunta 1 ·');
+  const question = await page.locator('.assess-card h2').innerText();
+  const leave = async () => {
+    const response = page.waitForResponse(r => r.url().includes('/evaluacion/api/') && r.request().postDataJSON()?.action === 'leave');
+    await page.evaluate(() => { Object.defineProperty(document, 'hidden', {configurable: true, get: () => true}); document.dispatchEvent(new Event('visibilitychange')); });
+    await response;
+  };
+  const back = () => page.evaluate(() => { Object.defineProperty(document, 'hidden', {configurable: true, get: () => false}); document.hasFocus = () => true; document.dispatchEvent(new Event('visibilitychange')); });
+  await leave();
+  await back();
+  await expect(page.locator('.assessment-return-notice')).toContainText('Tu avance se conservó');
+  await expect(page.locator('.assess-card h2')).toHaveText(question);
+  await leave();
+  await page.waitForTimeout(5100);
+  const restarted = page.waitForResponse(r => r.url().includes('/evaluacion/api/') && r.request().postDataJSON()?.action === 'restart');
+  await back();
+  const replacement = await (await restarted).json();
+  expect(replacement.attempt).not.toBe(initial.attempt);
+  await expect(page.locator('.assessment-away-notice')).toContainText('se reinició completamente');
+  await expect(page.locator('.activity-top')).toContainText('Pregunta 1 ·');
+  expect(events).toEqual([]);
 });
 
-test('el botón Teoría lleva al índice general del curso', async ({page}) => {
-  for (const path of ['/ecuaciones-no-lineales/errores/', '/sistemas-lineales/gauss-seidel/']) {
-    await page.goto(path);
-    await page.locator('#sidebar').getByRole('link', {name: /Teoría/}).first().click();
-    await expect(page).toHaveURL(/\/teoria\/$/);
-    await expect(page.getByRole('heading', {name: 'Sistemas de ecuaciones lineales'})).toBeVisible();
-  }
+test('Curso regresa al único índice desde cualquier tema', async ({page}) => {
+  await page.goto('/ecuaciones-no-lineales/newton/');
+  await page.locator('#menu-toggle').click();
+  await page.locator('.primary-learning').getByRole('link', {name:'Curso',exact:true}).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator('.unit-block')).toHaveCount(6);
 });
 
 test('móvil permite cerrar el menú con Escape y no desborda horizontalmente', async ({page}, info) => {

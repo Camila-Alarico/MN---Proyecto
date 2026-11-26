@@ -2,6 +2,55 @@
 
 **Métodos Numéricos Interactivos** · Laboratorio universitario con Django.
 
+## Organización actual del curso
+
+La página `/` es el único índice: siete unidades. El menú principal
+contiene **Curso** y **Mi avance** (`/avance/`, también disponible para invitados).
+Cada tema conserva su URL y reúne sus actividades. Los índices antiguos de
+temario, teoría y módulos redirigen al curso o a la unidad correspondiente.
+
+La lección de errores comparte el formato **Teoría → Ejercicio resuelto →
+Laboratorio → Comprueba** de las lecciones nuevas. Conserva el explorador,
+referencias positivas/negativas/cero, tolerancia, gráfica, decimales,
+sustitución numérica y ambas animaciones. Las prácticas enlazadas desde un tema
+se filtran en el servidor para mostrar únicamente sus ejercicios.
+
+Cada unidad indica el alcance de su evaluación. Errores (unidad 1), raíces
+(unidad 3) y sistemas lineales (unidad 4) tienen bancos disponibles; las unidades
+2, 5, 6 y 7 todavía no tienen autoevaluación completa. La evaluación de raíces
+(`alcance=unidad-2`, clave histórica de la URL) excluye preguntas del banco de errores.
+
+**La evaluación es por etapas.** Cada intento son problemas con etapas
+encadenadas (3 o 4 según el alcance): el servidor valida cada etapa y no habilita
+la siguiente hasta acertarla o agotar 3 intentos (entonces se muestra la respuesta).
+Cada etapa vale 1, 0.5 o 0.25 puntos según el intento en que se acierta, y 0 si hubo
+que mostrar la respuesta. Los intentos antiguos con preguntas sueltas siguen
+mostrándose y corrigiéndose.
+
+El avance representa temas marcados como completados, no calificaciones.
+Se guarda en la sesión del invitado y se traslada a la cuenta al iniciar sesión,
+incluidas las lecciones nuevas del temario.
+
+**Puntaje acumulado (aparte del avance).** `assessment/scoring.py`: el puntaje de
+una unidad es su mejor intento terminado (puntos ÷ problemas × 100); el acumulado es
+el promedio simple de las unidades con autoevaluación que ya se rindieron. Las
+unidades sin autoevaluación no suman ni restan, las pendientes no cuentan como cero
+y las evaluaciones conjuntas (`modulo-1`, `curso`) no se incluyen. Se muestra en
+«Mi avance», en el menú lateral y al terminar una evaluación. No requiere migraciones:
+se calcula con los intentos guardados. Los intentos de invitado quedan asociados a su
+navegador y no se trasladan a la cuenta al iniciar sesión.
+
+En la práctica de errores, el paso 3 pide un dato intermedio, la diferencia con signo
+`v − ṽ`, antes del error absoluto; cada campo se valida por separado.
+
+## Publicación en Vercel
+
+La configuración de `main` publica Django y aplica sus migraciones automáticamente.
+El `index.html` de la raíz conserva el prototipo antiguo. La configuración inicial
+de Vercel necesita una base PostgreSQL remota y `SECRET_KEY`; después los pushes a
+`main` actualizan la web sin mantener la laptop encendida. Consulta
+[configuración y verificación en Vercel](docs/VERCEL.md).
+
 ## Menú lateral auto-ocultable y animaciones de teoría
 
 - **Menú lateral**: en escritorio queda oculto por defecto y el contenido usa todo
@@ -23,12 +72,16 @@
   `tests/theory-animation.test.cjs` y `tests/browser/theory-animation.spec.cjs`.
 
 
-## UX de aprendizaje — revisión del 29/10/2026
+## Antecedente: UX de aprendizaje — revisión del 29/10/2026
+
+Esta sección describe el enfoque anterior de la portada; la organización vigente
+por unidades se explica arriba.
 
 La entrega se centra en **un tema: Errores numéricos**. Portada, teoría,
-práctica y autoevaluación siguen ese mismo recorrido. Hay **12 ejercicios**
-de errores y un banco de **20 preguntas**; cada evaluación presenta cinco
-preguntas de conceptos y después cinco de aplicación. La meta es ocho aciertos.
+práctica y el explorador siguen ese mismo recorrido. Hay **15 ejercicios**
+de errores. La autoevaluación permite elegir errores, el módulo 1, el módulo 2
+o ambos módulos, y mezcla selección múltiple, explicación y problemas por pasos.
+Consulta el [funcionamiento de la evaluación](docs/CAMBIOS_AUTOEVALUACION.md).
 
 La lección separa Conceptos y medidas, Origen del error y Explorador. La práctica
 incluye escalas distintas, redondeo, truncamiento, referencia cero y tolerancia
@@ -95,7 +148,7 @@ instalación y una clave privada para cualquier entorno compartido.
 ```sh
 git clone https://github.com/tniia/metodos-numericos.git
 cd metodos-numericos
-git switch feat/laboratorio-metodos-numericos
+git switch main
 python -m venv venv
 ```
 
@@ -264,10 +317,10 @@ Ver [VALIDATION.md](docs/VALIDATION.md) para resultados locales y límites de ve
 
 ## Git y colaboración
 
-La base remota auditada está en `feature/modulo-ecuaciones-no-lineales`; las mejoras
-locales están en `feat/laboratorio-metodos-numericos`, en commits por bloque.
-Antes de integrar, revisa `git status`, `git log` y `git diff`. La rama de mejoras
-se publicó en GitHub el 24/09/2026; `main` permanece sin modificaciones. No incluyas `.env`, bases locales, `.venv` o `node_modules`.
+La rama `main` integra el laboratorio, el menú lateral y las animaciones, junto
+con la revisión de práctica y autoevaluación de `laboratorio-metodos-numericos-revision`.
+Antes de actualizar, revisa `git status`, `git log` y `git diff`.
+No incluyas `.env`, bases locales, `.venv` o `node_modules`.
 
 Si Git pide autenticación en VS Code: abre la terminal integrada y ejecuta el push;
 completa el inicio de sesión de Git Credential Manager en el navegador con una cuenta

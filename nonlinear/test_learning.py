@@ -107,7 +107,8 @@ class GuidedLearningTests(TestCase):
         primary = html.split('class="primary-learning"', 1)[1].split('</nav>', 1)[0]
         self.assertNotIn('Mis apuntes', primary)
         self.assertNotIn('Mi progreso', primary)
-        self.assertIn('Autoevaluación', primary)
+        self.assertIn('Mi avance', primary)
+        self.assertNotIn('Autoevaluación', primary)
 
     def test_conversational_search_finds_newton(self):
         response = self.client.get('/buscar/', {'q': 'Quiero Newton'})
@@ -146,6 +147,35 @@ class GuidedLearningTests(TestCase):
         self.assertIn('multiplicarla por 100', wrong['checks'][1]['message'])
         correct = learning.check_practice(state, {'id': state['id'], 'step': 4, 'relative': .02, 'percentage': 2, 'decision': 'no'})
         self.assertTrue(correct['correct'])
+
+    def test_error_step_three_accepts_an_intermediate_signed_difference(self):
+        """Punto intermedio: v − ṽ con signo se valida por campo antes del error absoluto."""
+        state = learning.start_practice('errores')
+        state.update(variant=1, step=3, values={})
+        data = learning.case(state)
+        signed, absolute = learning.signed_difference(data), learning.absolute_error(data)
+        self.assertLess(signed, 0)  # la variante 1 tiene referencia negativa: el signo importa
+        public = learning.public_practice(state)
+        self.assertEqual([item['key'] for item in public['fields']], ['diff', 'x'])
+        payload = {'id': state['id'], 'step': 3}
+        both_wrong = learning.check_practice(state, {**payload, 'diff': -signed, 'x': absolute})
+        self.assertEqual([c['field'] for c in both_wrong['checks']], ['diff', 'x'])
+        self.assertEqual([c['correct'] for c in both_wrong['checks']], [False, True])
+        self.assertIn('valor absoluto', both_wrong['checks'][0]['message'])
+        self.assertEqual(state['step'], 3)                        # un campo incorrecto no deja avanzar
+        wrong_x = learning.check_practice(state, {**payload, 'diff': signed, 'x': signed})
+        self.assertEqual([c['correct'] for c in wrong_x['checks']], [True, False])
+        self.assertIn('diferencia con signo ya validada', wrong_x['checks'][1]['message'])
+        ok = learning.check_practice(state, {**payload, 'diff': signed, 'x': absolute})
+        self.assertTrue(ok['correct'])
+        self.assertEqual((state['step'], state['values']['x']), (4, absolute))
+
+    def test_error_step_three_still_works_without_the_intermediate_field(self):
+        state = learning.start_practice('errores')
+        state.update(variant=1, step=3, values={})
+        ok = learning.check_practice(state, {'id': state['id'], 'step': 3, 'x': learning.absolute_error(learning.case(state))})
+        self.assertTrue(ok['correct'])
+        self.assertEqual([c['field'] for c in ok['checks']], ['x'])
 
     def test_public_error_step_gives_formula_without_final_answers(self):
         state = learning.start_practice('errores')
@@ -227,7 +257,7 @@ class GuidedLearningTests(TestCase):
         for exercise in (True, [], 'newton-999', 'biseccion-0'):
             self.assertEqual(self.call('practice', action='start', topic='newton', exercise=exercise).status_code, 400)
         response = self.client.get('/ecuaciones-no-lineales/newton/')
-        for removed in ('Ingresar', 'Mi progreso', 'Mis apuntes', 'Favoritos', 'complete-topic'):
+        for removed in ('Ingresar', 'Mi progreso', 'Mis apuntes', 'Favoritos'):
             self.assertNotContains(response, removed)
 
     def test_secant_rejects_equal_images_and_false_position_checks_fields(self):
@@ -296,25 +326,22 @@ class PracticeLockTests(GuidedLearningTests):
     def leave(self, state, **extra):
         return self.call('practice', action='leave', id=state['id'], **extra)
 
-    def test_leaving_locks_the_practice_and_reload_cannot_resume_it(self):
+    def test_leaving_preserves_step_and_answers(self):
         state = self.start('errores')
         state = self.advance(state, choice='error')
-        response = self.leave(state)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json()['locked'])
-        resumed = self.call('practice', action='resume').json()          # equivale a recargar la página
-        self.assertTrue(resumed['locked'])
-        self.assertNotIn('fields', resumed)
-        self.assertNotIn('choices', resumed)
-        self.assertNotIn('math_context', resumed)
-        self.assertIn('repetirla desde el inicio', resumed['message'])
+        self.assertEqual(self.leave(state).status_code, 200)
+        resumed = self.call('practice', action='resume').json()
+        self.assertFalse(resumed.get('locked'))
+        self.assertEqual(resumed['step'], 1)
+        self.assertEqual(resumed['id'], state['id'])
+        self.assertIn('choices', resumed)
 
-    def test_a_locked_practice_rejects_answers(self):
+    def test_answers_are_accepted_after_leaving(self):
         state = self.start('errores')
         self.leave(state)
-        rejected = self.call('practice', action='check', id=state['id'], step=0, choice='error')
-        self.assertEqual(rejected.status_code, 400)
-        self.assertIn('bloqueada', rejected.json()['error'])
+        response = self.call('practice', action='check', id=state['id'], step=0, choice='error')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['correct'])
 
     def test_restart_repeats_the_same_exercise_from_step_zero(self):
         state = self.start('errores')
@@ -334,13 +361,13 @@ class PracticeLockTests(GuidedLearningTests):
         self.leave(state)
         fresh = self.call('practice', action='restart').json()
         self.leave(fresh)
-        self.assertEqual(self.call('practice', action='resume').json()['locks'], 2)
+        self.assertEqual(self.call('practice', action='resume').json().get('locks', 0), 0)
 
     def test_leaving_is_idempotent_and_stale_notices_are_ignored(self):
         state = self.start('errores')
         self.leave(state)
         self.leave(state)
-        self.assertEqual(self.call('practice', action='resume').json()['locks'], 1)
+        self.assertEqual(self.call('practice', action='resume').json().get('locks', 0), 0)
         fresh = self.call('practice', action='restart').json()
         stale = self.leave(state)  # aviso rezagado de la práctica anterior
         self.assertTrue(stale.json().get('ignored'))
@@ -361,7 +388,7 @@ class PracticeLockTests(GuidedLearningTests):
         original = self.start('newton')
         focused = self.call('practice', action='start', scope='errores', topic='errores', exercise='errores-0').json()
         self.call('practice', action='leave', scope='errores', id=focused['id'])
-        self.assertTrue(self.call('practice', action='resume', scope='errores').json()['locked'])
+        self.assertFalse(self.call('practice', action='resume', scope='errores').json().get('locked'))
         self.assertFalse(self.call('practice', action='resume').json().get('locked'))
         self.assertEqual(self.call('practice', action='resume').json()['id'], original['id'])
 
@@ -393,4 +420,4 @@ class PracticeLockTests(GuidedLearningTests):
         response = self.client.get('/ecuaciones-no-lineales/practica/')
         self.assertContains(response, 'Pesa patrón en la balanza')
         self.assertContains(response, 'balanza de laboratorio')
-        self.assertContains(response, 'Práctica individual')
+        self.assertContains(response, 'Tu avance se conserva')

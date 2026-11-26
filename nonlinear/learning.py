@@ -82,6 +82,11 @@ def absolute_error(data):
     return float(abs(Decimal(str(data['v'])) - Decimal(str(data['approx']))))
 
 
+def signed_difference(data):
+    """Dato intermedio del paso 3: v − ṽ conservando el signo (aún sin valor absoluto)."""
+    return float(Decimal(str(data['v'])) - Decimal(str(data['approx'])))
+
+
 def field(key, label, hint=''):
     return {'key': key, 'label': label, 'hint': hint}
 
@@ -128,9 +133,30 @@ def check_errors(state, payload):
         add('v', close(v, data['v']), 'La referencia está identificada.' if close(v, data['v']) else 'Usa el valor de referencia del enunciado, conservando su signo.')
         add('approx', close(approx, data['approx']), 'La aproximación está identificada.' if close(approx, data['approx']) else 'Usa el valor medido o aproximado; no lo intercambies con la referencia.')
     elif step == 3:
+        # Punto de entrada intermedio: la diferencia con signo se valida como un campo más, antes del error absoluto.
+        # Si no llega en la petición (clientes anteriores), el paso funciona como siempre con solo `x`.
+        diff_ok = None
+        if payload.get('diff') not in (None, ''):
+            diff, signed = numeric(payload, 'diff'), signed_difference(data)
+            diff_ok = close(diff, signed)
+            if diff_ok:
+                message = 'La diferencia con signo está bien. Es un dato intermedio: aún falta tomar su magnitud.'
+            elif signed < 0 and close(diff, -signed):
+                message = 'Ya tomaste el valor absoluto. En este dato intermedio conserva el signo.'
+            elif signed != 0 and close(diff, -signed):
+                message = 'Tienes el signo al revés: resta la referencia menos la aproximación (v − ṽ).'
+            else:
+                message = 'Resta la referencia y la aproximación sin cambiar el orden y conserva el signo del resultado.'
+            add('diff', diff_ok, message, rf'd=v-\widetilde v={tex_number(data["v"])}-({tex_number(data["approx"])})',
+                f'd = v − ṽ = {data["v"]:g} − ({data["approx"]:g})')
+            if diff_ok:
+                values['diff'] = signed
         x = numeric(payload, 'x')
         expected = absolute_error(data)
-        message = 'El error absoluto está bien calculado.' if close(x, expected) else 'El error absoluto es una distancia y no puede ser negativo.' if x < 0 else 'Resta referencia y aproximación; después toma el valor absoluto.'
+        message = ('El error absoluto está bien calculado.' if close(x, expected) else
+                   'Con tu diferencia con signo ya validada, el error absoluto es su valor absoluto: una distancia, sin signo.' if diff_ok else
+                   'El error absoluto es una distancia y no puede ser negativo.' if x < 0 else
+                   'Resta referencia y aproximación; después toma el valor absoluto.')
         add('x', close(x, expected), message,
             rf'E_a=\left|{tex_number(data["v"])}-({tex_number(data["approx"])})\right|',
             f'Ea = |{data["v"]:g} − ({data["approx"]:g})|')
@@ -257,7 +283,10 @@ def public_practice(state):
                                 'punto-fijo': 'Elige un punto del intervalo indicado. Estas transformaciones llevan ese intervalo a sí mismo y allí son contracciones.'}[topic])
     elif step == 3:
         if topic == 'errores':
-            answer.update(prompt='¿Qué distancia hay entre ambos valores?', fields=[{**field('x', 'Error absoluto'), 'formula': formula(r'E_a=|v-\widetilde v|', 'Ea = |v − ṽ|'), 'note': 'Conserva las unidades de la referencia.'}], hint='Resta los dos valores y toma la magnitud de la diferencia.')
+            answer.update(prompt='¿Qué distancia hay entre ambos valores?', fields=[
+                {**field('diff', 'Diferencia con signo v − ṽ (dato intermedio)'), 'formula': formula(r'd=v-\widetilde v', 'd = v − ṽ'), 'note': 'Primero resta sin tomar valor absoluto: conserva el signo.'},
+                {**field('x', 'Error absoluto'), 'formula': formula(r'E_a=|d|', 'Ea = |d|'), 'note': 'Conserva las unidades de la referencia.'}],
+                hint='Calcula primero la diferencia con signo y luego toma su magnitud. Cada campo se comprueba por separado.')
         else:
             values = ', '.join(f'{key} = {value:g}' for key, value in state['values'].items())
             answer.update(prompt=f'Con {values}, calcula la primera aproximación nueva.', fields=[field('x', 'Nueva aproximación x₂' if topic == 'secante' else 'Primera aproximación m' if topic == 'biseccion' else 'Nueva aproximación x₁')],

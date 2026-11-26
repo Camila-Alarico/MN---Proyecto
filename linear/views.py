@@ -1,7 +1,7 @@
 import logging
 
 from django.http import Http404, HttpResponsePermanentRedirect
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse
 
 from core.models import UserProgress
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # --- Páginas ----------------------------------------------------------------
 
 def landing(request):
-    return render(request, 'linear/landing.html')
+    return redirect('/#unidad-4')
 
 
 def page(request, slug):

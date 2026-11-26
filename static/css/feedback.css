@@ -1,0 +1,71 @@
+/* Retroalimentación visual común: carga, avisos, validación, cambios de valor y estados interactivos. */
+@keyframes fx-spin { to { transform: rotate(360deg); } }
+@keyframes fx-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes fx-pop { 0% { transform: scale(1); } 40% { transform: scale(1.025); } 100% { transform: scale(1); } }
+@keyframes fx-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
+@keyframes fx-flash { 0% { opacity: .22; } 100% { opacity: 0; } }
+@keyframes fx-glow { 0% { box-shadow: 0 0 0 0 #6455d955; background-color: #efecfd; } 100% { box-shadow: 0 0 0 10px #6455d900; } }
+@keyframes fx-toast-in { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes fx-toast-out { to { opacity: 0; transform: translateY(8px); } }
+@keyframes fx-indeterminate { 0% { transform: translateX(-100%) scaleX(.4); } 50% { transform: translateX(20%) scaleX(.6); } 100% { transform: translateX(110%) scaleX(.4); } }
+
+.spinner { display: inline-block; width: 15px; height: 15px; flex: none; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: fx-spin .7s linear infinite; vertical-align: -2px; }
+
+/* Barra superior: navegación entre páginas y peticiones en curso. */
+#fx-progress { position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 200; pointer-events: none; opacity: 0; transition: opacity .25s; overflow: hidden; }
+#fx-progress.is-active { opacity: 1; }
+#fx-progress > span { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #6d8afd, #9559eb); transform-origin: left; animation: fx-indeterminate 1.1s ease-in-out infinite; }
+/* Avance de lectura de la página. */
+#fx-reading { position: fixed; inset: 0 auto auto 0; height: 3px; width: 100%; z-index: 190; pointer-events: none; background: transparent; }
+#fx-reading > span { display: block; height: 100%; width: 100%; transform: scaleX(var(--read, 0)); transform-origin: left; background: #6455d9; opacity: .55; transition: transform .1s linear; }
+
+/* Avisos emergentes. */
+.fx-toasts { position: fixed; right: 22px; bottom: 22px; z-index: 210; display: grid; gap: 10px; width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+.fx-toast { pointer-events: auto; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 11px; align-items: start; background: #172544; color: #fff; border-radius: 12px; padding: 13px 14px; font-size: 13px; line-height: 1.5; box-shadow: 0 14px 34px #0d172f40; border-left: 4px solid #8f9fd0; animation: fx-toast-in .28s cubic-bezier(.2,.8,.2,1); }
+.fx-toast.is-leaving { animation: fx-toast-out .22s forwards; }
+.fx-toast.is-success { border-left-color: #4fc07d; } .fx-toast.is-success .fx-toast-icon { color: #6fdc9b; }
+.fx-toast.is-error { border-left-color: #f0737f; } .fx-toast.is-error .fx-toast-icon { color: #ff9aa4; }
+.fx-toast.is-info .fx-toast-icon { color: #b9c5f0; }
+.fx-toast-icon { font-size: 17px; line-height: 1.2; }
+.fx-toast button { border: 0; background: transparent; color: #b9c5e6; font-size: 17px; line-height: 1; padding: 0 2px; }
+.fx-toast button:hover { color: #fff; }
+
+/* Botones: respuesta al pasar, pulsar y esperar. */
+.btn, .iteration-button, .quiet-button, .icon-button { transition: transform .12s, box-shadow .18s, background-color .18s, border-color .18s, color .18s, opacity .18s; }
+.btn:hover:not(:disabled) { box-shadow: 0 5px 14px #1a274a1c; transform: translateY(-1px); }
+.btn:active:not(:disabled), .iteration-button:active { transform: translateY(0) scale(.97); box-shadow: none; }
+.btn:focus-visible, .check-option:focus-visible, .lab-preset:focus-visible, .topic-link:focus-visible, .unit-card:focus-visible, .pager-card:focus-visible { outline: 3px solid #6455d955; outline-offset: 2px; }
+.btn.fx-busy { position: relative; pointer-events: none; }
+.btn.fx-busy:not(.loading)::before { content: ''; width: 13px; height: 13px; flex: none; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: fx-spin .7s linear infinite; }
+.btn.fx-done { background: #2f8a4e !important; border-color: #2f8a4e !important; color: #fff !important; }
+
+/* Campos: foco, error y corrección. */
+input, select, textarea { transition: border-color .18s, outline-color .18s, background-color .18s, box-shadow .18s; }
+input.fx-invalid, select.fx-invalid, textarea.fx-invalid { border-color: #c9485b !important; background-color: #fff8f8; animation: fx-shake .36s; }
+#alert:not([hidden]) { animation: fx-shake .36s; }
+.fx-field-note { display: block; font-size: 11.5px; color: #9c2d3b; margin-top: 5px; animation: fx-rise .2s; }
+
+/* Un valor que cambia se ilumina un instante. */
+.fx-updated { animation: fx-glow .8s ease-out; border-radius: 6px; }
+
+/* Tarjetas, filas y enlaces que reaccionan al puntero. */
+.practice-card, .study-topic, .route-step, .exercise-card, .topic-card, .module-card { transition: transform .2s, box-shadow .2s, border-color .2s; }
+.practice-card:hover, .exercise-card:hover, .topic-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px #1a274a14; }
+.study-topic:hover, .route-step:hover { border-color: #b9aee8; box-shadow: 0 6px 18px #1a274a10; }
+.table tbody tr { transition: background-color .15s; }
+.table tbody tr:hover > td { background-color: #f5f4fb; }
+.table tbody tr.active-row > td { background-color: #ece8fb; box-shadow: inset 3px 0 #6455d9; }
+.primary-learning a, .sidebar-modules a, .topic-strip a, .lesson-nav a { transition: background-color .15s, color .15s, box-shadow .15s; }
+.disclosure > summary { transition: background-color .15s, color .15s; }
+.disclosure > summary:hover { background-color: #f4f2fb; }
+.disclosure[open] > .disclosure-content { animation: fx-rise .25s; }
+.worked-reveal li { transition: background-color .2s, box-shadow .2s; border-radius: 8px; }
+.worked-reveal li:hover { background: #f4f2fb; box-shadow: 0 0 0 7px #f4f2fb; }
+
+/* Volver arriba. */
+#fx-top { position: fixed; right: 22px; bottom: 22px; z-index: 180; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: #fff; color: #5647c3; font-size: 18px; box-shadow: 0 8px 22px #1a274a22; opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity .2s, transform .2s, background .15s; }
+#fx-top.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+#fx-top:hover { background: #efecfd; }
+.fx-toasts:not(:empty) ~ #fx-top { bottom: 96px; }
+
+@media (prefers-reduced-motion: reduce) { #fx-progress > span { animation: none; } }

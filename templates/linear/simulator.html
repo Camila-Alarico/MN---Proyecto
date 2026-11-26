@@ -2,7 +2,7 @@
 {% block title %}{{ method.title }} · {{ family.title }} · NumLearn{% endblock %}
 {% block scripts %}<link href="{% static 'css/linear.css' %}" rel="stylesheet"><script type="module" src="{% static 'js/linear/lab.js' %}"></script>{% endblock %}
 {% block content %}
-<div class="breadcrumb-line"><a href="{% url 'linear:landing' %}">Módulo 2</a> / {{ family.title }} / {{ method.title }}</div>
+
 <header class="method-header">
   <div><span class="eyebrow">{{ family.title|upper }} · PASO {{ route_position|stringformat:'02d' }}</span><h1>{{ method.title }}</h1><p>{{ method.description }}</p></div>
 

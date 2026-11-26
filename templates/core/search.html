@@ -11,11 +11,11 @@
 {% endif %}
 
 {% if results.topics %}
-<div class="section-heading"><div><h2>Temas de los módulos</h2></div></div>
+<div class="section-heading"><div><h2>Temas y lecciones</h2></div></div>
 <div class="topic-grid">
   {% for item in results.topics %}
   <article class="panel topic-card">
-    <div class="card-top"><span class="module-icon"><i class="bi bi-{{ item.icon }}"></i></span><span class="subtle-pill">Módulo {{ item.module }} · {{ item.difficulty }}</span></div>
+    <div class="card-top"><span class="module-icon"><i class="bi bi-{{ item.icon }}"></i></span><span class="subtle-pill">{% if item.label %}{{ item.label }}{% else %}Módulo {{ item.module }}{% endif %} · {{ item.difficulty }}</span></div>
     <h3>{{ item.title }}</h3><p>{{ item.description }}</p>
     <a href="{{ item.url }}" class="card-link">Explorar <i class="bi bi-arrow-right"></i></a>
   </article>

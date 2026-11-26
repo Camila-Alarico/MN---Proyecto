@@ -55,7 +55,7 @@ test('la animación del ejercicio resuelto avanza paso a paso y en automático',
 });
 
 test('los temas de teoría animan errores y sistemas lineales', async ({page}) => {
-  await page.goto('/ecuaciones-no-lineales/errores/');
+  await page.goto('/ecuaciones-no-lineales/errores/#ejercicio-resuelto');
   const errorsScene = page.getByTestId('theory-animation-errors');
   await errorsScene.getByRole('button', {name: 'Iniciar animación'}).click();
   for (let i = 0; i < 5; i++) await errorsScene.getByTestId('anim-next').click();

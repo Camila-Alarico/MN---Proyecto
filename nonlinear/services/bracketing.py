@@ -10,7 +10,7 @@ def substituted_formula(method, a, b, fa, fb, x):
             f'/({num(fb)} − {num(fa)}) = {num(x, 8)}')
 
 
-def solve_bracket(method, expression, a, b, tolerance=0.0001, max_iterations=100):
+def solve_bracket(method, expression, a, b, tolerance=0.000001, max_iterations=100):
     tol, count = controls(tolerance, max_iterations)
     f = parse_function(expression)
     a, b = finite(a, 'a'), finite(b, 'b')

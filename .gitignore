@@ -11,3 +11,4 @@ staticfiles/
 htmlcov/
 test-results/
 node_modules/
+.vercel/

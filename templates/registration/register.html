@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}Crear cuenta · NumLearn{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'js/auth.js' %}"></script>{% endblock %}
+{% block content %}
+<div class="auth-layout">
+  {% include 'components/auth_context.html' %}
+  <section class="panel auth-panel" aria-labelledby="auth-heading">
+    <header><span class="eyebrow">CUENTA PERSONAL</span><h1 id="auth-heading">Crear una cuenta</h1><p>Elige un nombre de usuario y una contraseña para guardar tu trabajo.</p></header>
+    <form method="post">{% csrf_token %}{% include 'components/auth_fields.html' %}<button type="submit" class="btn btn-primary w-100">Crear cuenta</button></form>
+    <p class="auth-switch">¿Ya tienes cuenta? <a href="{% url 'login' %}">Iniciar sesión</a></p>
+    <p class="auth-guest"><a href="/ecuaciones-no-lineales/">Continuar como invitado <span aria-hidden="true">→</span></a><br>Los simuladores no requieren una cuenta.</p>
+  </section>
+</div>
+{% endblock %}

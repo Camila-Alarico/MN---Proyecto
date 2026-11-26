@@ -122,9 +122,10 @@ class HistoryTests(TestCase):
 
 class NavigationTests(TestCase):
     def test_home_lists_modules_from_catalog_and_hides_fake_widgets(self):
+        from temario.catalog import UNITS
         response = self.client.get('/')
-        self.assertContains(response, 'Sistemas de ecuaciones lineales')
-        self.assertContains(response, '2 de 5 módulos disponibles')
+        for unit in UNITS:
+            self.assertContains(response, unit['title'])
         self.assertNotContains(response, 'Sin notificaciones nuevas')
         self.assertNotContains(response, 'bi-lock')
         self.assertContains(response, 'integrity="sha384-')
@@ -175,12 +176,12 @@ class ConsolidatedRoutingTests(TestCase):
         self.assertRedirects(response, '/ecuaciones-no-lineales/biseccion/', status_code=301, fetch_redirect_response=False)
 
     def test_canonical_method_url_is_used_and_legacy_alias_is_not(self):
-        response = self.client.get('/ecuaciones-no-lineales/teoria/?vista=modulo')
+        response = self.client.get('/')
         self.assertContains(response, 'href="/ecuaciones-no-lineales/biseccion/"')
         self.assertNotContains(response, 'href="/ecuaciones-no-lineales/laboratorio/"')
 
     def test_guided_practice_replaces_removed_quiz_page(self):
-        self.assertContains(self.client.get('/ecuaciones-no-lineales/practica/'), 'Práctica guiada')
+        self.assertContains(self.client.get('/ecuaciones-no-lineales/practica/'), 'EJERCICIOS GUIADOS')
 
 
 class SearchConsolidationTests(TestCase):
@@ -225,18 +226,17 @@ class ModuleSelectionNavigationTests(TestCase):
     """La navbar apunta a la selección de módulos (`/#modules`), generada desde core/catalog.py."""
 
     def test_navbar_links_to_module_selector_not_to_module_one(self):
-        response = self.client.get('/ecuaciones-no-lineales/')
-        self.assertContains(response, 'href="/#modules"')
+        response = self.client.get('/ecuaciones-no-lineales/newton/')
+        self.assertContains(response, 'href="/"')
         self.assertNotContains(response, 'ecuaciones-no-lineales/experimentos')
         self.assertNotContains(response, '>Experimentos<')
 
-    def test_selector_lists_every_catalog_module(self):
-        from .catalog import MODULES
+    def test_selector_lists_every_course_unit(self):
+        from temario.catalog import UNITS
         response = self.client.get('/')
-        self.assertContains(response, 'id="modules"')
-        for module in MODULES:
-            self.assertContains(response, module['title'])
-        self.assertContains(response, 'href="/sistemas-lineales/"')
+        for unit in UNITS:
+            self.assertContains(response, f'id="unidad-{unit["number"]}"')
+            self.assertContains(response, unit['title'])
 
     def test_removed_sections_are_gone(self):
         for url in ('/ecuaciones-no-lineales/experimentos/', '/ecuaciones-no-lineales/desafios/',
@@ -310,22 +310,17 @@ class ComparisonTests(TestCase):
 class LearningRouteTests(TestCase):
     """La barra lateral muestra una ruta corta por módulo; los métodos se eligen dentro del simulador."""
 
-    def test_module_one_route_has_six_steps_and_hides_individual_methods(self):
-        response = self.client.get('/ecuaciones-no-lineales/teoria/?vista=modulo')
-        for title in ('Errores numéricos', 'Raíces de ecuaciones', 'Métodos cerrados', 'Métodos abiertos',
-                      'Raíces múltiples de polinomios', 'Comparar métodos'):
-            self.assertContains(response, title)
-        sidebar = response.content.decode().split('<aside', 1)[1].split('</aside>', 1)[0]
-        for hidden in ('>Regla falsa', '>Punto fijo', '>Secante', '>Newton-Raphson', '>Bisección'):
-            self.assertNotIn(hidden, sidebar)
-        self.assertContains(response, 'href="/ecuaciones-no-lineales/biseccion/"')
-        self.assertContains(response, 'href="/ecuaciones-no-lineales/newton/"')
+    def test_course_groups_root_topics_in_unit_two(self):
+        response = self.client.get('/')
+        self.assertContains(response, 'id="unidad-2"')
+        for slug in ('biseccion', 'newton', 'secante', 'regla-falsa', 'raices-multiples'):
+            self.assertContains(response, f'href="/ecuaciones-no-lineales/{slug}/"')
         self.assertEqual(len(response.context['route_topics']), 6)
 
     def test_module_two_route_groups_direct_and_iterative(self):
         response = self.client.get('/')
-        self.assertContains(response, 'Métodos directos')
-        self.assertContains(response, 'Métodos iterativos')
+        self.assertContains(response, 'Eliminación gaussiana')
+        self.assertContains(response, 'Gauss-Seidel')
         self.assertContains(response, 'href="/sistemas-lineales/gauss-seidel/"')
 
     def test_every_method_page_offers_a_selector_grouped_by_family(self):
@@ -338,10 +333,11 @@ class LearningRouteTests(TestCase):
         self.assertContains(self.client.get('/ecuaciones-no-lineales/secante/'), 'value="secant" selected')
         self.assertContains(self.client.get('/sistemas-lineales/gauss-seidel/'), 'value="gauss-seidel" selected')
 
-    def test_family_step_is_current_for_every_method_of_the_family(self):
+    def test_topic_location_names_the_actual_method(self):
         response = self.client.get('/ecuaciones-no-lineales/secante/')
-        topic_nav = response.content.decode().split('class="topic-strip"', 1)[1].split('</nav>', 1)[0]
-        self.assertRegex(topic_nav, r'href="/ecuaciones-no-lineales/newton/" aria-current="page"')
+        self.assertEqual(response.context['course_entry']['slug'], 'secante')
+        self.assertEqual(response.context['temario_unit']['number'], 3)
+        self.assertContains(response, 'href="/#unidad-3"')
 
     def test_completing_one_method_completes_its_family_step(self):
         self.client.post('/api/nonlinear/progress/', {'topic': 'regla-falsa'}, content_type='application/json')

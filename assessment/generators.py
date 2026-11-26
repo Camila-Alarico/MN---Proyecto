@@ -444,3 +444,84 @@ def percent_to_absolute(rng):
             choice('¿Se cumple Ea ≤ τ?', 'si' if ea <= tau + 1e-12 else 'no', YES_NO, 'Compara el Ea que obtuviste con la tolerancia absoluta.'),
         ],
     }
+
+
+# --- Unidades nuevas: aproximación, ajuste, integración/derivación y EDO -------------------------
+
+def approximation_taylor(rng):
+    x = rng.choice([0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4])
+    exact = math.exp(x)
+    p2 = 1 + x + x*x/2
+    return {'given': [f'Aproxima e^{n(x)} con P₂(x) = 1 + x + x²/2.'], 'steps': [
+        num('Calcula el término lineal x.', x, 'El término lineal es el propio valor de x.'),
+        num('Calcula x²/2.', x*x/2, 'Eleva x al cuadrado y divide entre dos.'),
+        num('Calcula P₂(x).', p2, 'Suma 1 + x + x²/2.'),
+        num('Calcula el error absoluto frente a eˣ (usa el valor de referencia indicado por la calculadora).', abs(exact-p2), 'El error de truncamiento es |eˣ − P₂(x)|.', tol=1e-6)]}
+
+def approximation_rounding(rng):
+    x = rng.choice([math.sqrt(2), math.pi, math.e, math.sqrt(3), math.log(2), math.sqrt(5), math.log(3), math.sqrt(7)])
+    approx = round(x, 3)
+    return {'given': [f'Valor de referencia x ≈ {x:.8f}.', 'Se conservarán tres decimales.'], 'steps': [
+        num('Escribe x redondeado a tres decimales.', approx, 'Se observa la cuarta cifra decimal para decidir el redondeo.', tol=1e-6),
+        num('Calcula el error absoluto de la aproximación.', abs(x-approx), 'Ea = |valor de referencia − aproximación|.', tol=1e-6),
+        choice('¿La aproximación tiene tres decimales necesariamente mayor exactitud que otra con menos?', 'no', YES_NO, 'La cantidad de decimales mostrados no determina por sí sola la exactitud.')]}
+
+def curve_least_squares(rng):
+    slope, intercept = rng.choice([1, 2, 3]), rng.choice([1, 2, 4])
+    noise = [rng.choice([-1, 0, 1]) for _ in range(3)]
+    xs = [0, 1, 2]
+    ys = [slope*x + intercept + e for x, e in zip(xs, noise)]
+    sx, sy = sum(xs), sum(ys)
+    sxx, sxy = sum(x*x for x in xs), sum(x*y for x, y in zip(xs, ys))
+    m = (3*sxy - sx*sy) / (3*sxx - sx*sx)
+    c = (sy - m*sx) / 3
+    x_eval = 1.5
+    return {'given': [f'Datos experimentales: (0, {ys[0]}), (1, {ys[1]}), (2, {ys[2]}).',
+                      'Ajusta una recta y = mx + c por mínimos cuadrados.'], 'steps': [
+        num('Calcula la suma Σy.', sy, 'Suma las tres ordenadas.'),
+        num('Calcula la suma Σxy.', sxy, 'Multiplica cada x por su y y suma los productos.'),
+        num('Calcula la pendiente m = (3Σxy − ΣxΣy)/(3Σx² − (Σx)²).', m,
+            'Aplica la fórmula de mínimos cuadrados para la pendiente.'),
+        num('Calcula la ordenada c = (Σy − mΣx)/3.', c, 'Sustituye la pendiente en la fórmula de la ordenada.'),
+        num(f'Predice y para x = {n(x_eval)}.', m*x_eval+c, 'Evalúa la recta ajustada en el valor solicitado.') ]}
+
+def curve_interpolation(rng):
+    x0 = rng.choice([1,2,3]); slope = rng.choice([2,3,4]); intercept = rng.choice([1,2])
+    x = x0 + 1
+    return {'given': [f'Puntos conocidos de una función lineal: ({x0}, {slope*x0+intercept}) y ({x0+2}, {slope*(x0+2)+intercept}).', f'Estima el valor en x = {x}.'], 'steps': [
+        num('Calcula la pendiente entre los dos puntos.', slope, 'm = (y₂ − y₁)/(x₂ − x₁).'),
+        num('Calcula el valor interpolado en el punto medio.', slope*x+intercept, 'En una recta, el punto medio en x corresponde al promedio de las ordenadas.'),
+        choice('¿La interpolación lineal usa valores dentro del intervalo de datos?', 'si', YES_NO, 'La interpolación estima dentro del rango conocido; fuera de él sería extrapolación.')] }
+
+def integration_trapezoid(rng):
+    a, b = 0, rng.choice([2,4,6]); fa, fb = rng.choice([1,2]), rng.choice([3,4,5])
+    h=b-a; area=h*(fa+fb)/2
+    return {'given': [f'Un intervalo [0, {b}] tiene valores f(0) = {fa} y f({b}) = {fb}.', 'Usa una sola aplicación de la regla trapezoidal.'], 'steps': [
+        num('Calcula la anchura h = b − a.', h, 'Resta los extremos del intervalo.'),
+        num('Calcula el promedio de las alturas.', (fa+fb)/2, 'Promedia f(a) y f(b).'),
+        num('Calcula el área aproximada del trapecio.', area, 'I ≈ h·(f(a)+f(b))/2.')]}
+
+def differentiation_central(rng):
+    x, h = rng.choice([1,2]), rng.choice([0.1,0.2,0.5])
+    # f(x)=x^2; diferencia central exacta para esta función
+    deriv=2*x
+    return {'given': [f'f(x) = x², x = {x}, h = {n(h)}.', 'Usa la diferencia central.'], 'steps': [
+        num('Calcula f(x + h).', (x+h)**2, 'Sustituye x+h en la función.'),
+        num('Calcula f(x − h).', (x-h)**2, 'Sustituye x−h en la función.'),
+        num('Calcula [f(x+h) − f(x−h)]/(2h).', deriv, 'La fórmula de diferencia central aproxima la derivada primera.', tol=1e-6)]}
+
+def edo_euler(rng):
+    y0, x0, h, rate = rng.choice([1,2,3]), 0, rng.choice([0.1,0.2,0.5]), rng.choice([1,2])
+    y1=y0+h*rate*y0
+    return {'given': [f"Problema y' = {rate}y, y(0) = {y0}.", f'Paso h = {n(h)}.'], 'steps': [
+        num("Evalúa la pendiente y' en el punto inicial.", rate*y0, 'Sustituye y₀ en f(x,y) = rate·y.'),
+        num('Calcula y₁ con Euler: y₁ = y₀ + h·f(x₀,y₀).', y1, 'Suma al valor actual el paso por la pendiente.'),
+        choice('¿Euler utiliza la pendiente evaluada al inicio del intervalo?', 'si', YES_NO, 'Euler explícito usa una sola pendiente, evaluada en el extremo inicial.')]}
+
+def edo_rk2(rng):
+    y0, h, rate = rng.choice([1,2]), rng.choice([0.1,0.2]), rng.choice([1,2])
+    k1=rate*y0; k2=rate*(y0+h*k1); y1=y0+h*(k1+k2)/2
+    return {'given': [f"Problema y' = {rate}y, y(0) = {y0}.", f'Paso h = {n(h)}.', 'Usa Euler modificado (Heun).'], 'steps': [
+        num('Calcula k₁ = f(x₀,y₀).', k1, 'Evalúa la pendiente inicial.'),
+        num('Calcula k₂ = f(x₀+h, y₀+h·k₁).', k2, 'Evalúa la pendiente en el predictor.'),
+        num('Calcula y₁ = y₀ + h(k₁+k₂)/2.', y1, 'Promedia las pendientes inicial y predicha.')]}

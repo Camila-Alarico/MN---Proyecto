@@ -4,21 +4,12 @@
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 21.2 6.4 17.6"/><path class="dart-barrel" d="M5.6 16.4 7.6 18.4 12.6 13.4 10.6 11.4Z"/><path d="M11.6 12.4 16.4 7.6"/><path class="dart-flight" d="M16.4 7.6 15.2 2.6 19.2 4.8Z"/><path class="dart-flight" d="M16.4 7.6 21.4 8.8 19.2 4.8Z"/></svg>
   </button>
   <a href="/" class="brand"><span class="brand-icon">N<span class="brand-period">.</span></span><span>NumLearn<small>MÉTODOS NUMÉRICOS</small></span></a>
-  <div class="sidebar-course"><span class="eyebrow">{% if is_linear_module %}MÓDULO 02{% elif errors_focus %}TEMA DE ESTUDIO{% else %}MÓDULO 01{% endif %}</span><strong>{% if is_linear_module %}Sistemas lineales{% elif errors_focus %}Errores numéricos{% else %}Raíces y errores{% endif %}</strong></div>
+  <div class="sidebar-course"><span class="eyebrow">{% if temario_unit %}UNIDAD {{ temario_unit.number }}{% else %}MÉTODOS NUMÉRICOS{% endif %}</span><strong>{% if temario_unit %}{{ temario_unit.title }}{% else %}Curso completo{% endif %}</strong></div>
   <nav class="primary-learning" aria-label="Secciones principales">
-    <a href="/" {% if learning_section == 'home' %}aria-current="page"{% endif %}><span aria-hidden="true">⌂</span> Inicio</a>
-    {% if is_linear_module %}
-    <a href="{% url 'theory-hub' %}" {% if request.path == '/teoria/' or topic == 'formulacion' %}aria-current="page"{% endif %}><span aria-hidden="true">01</span> Teoría</a>
-    <a href="/sistemas-lineales/eliminacion-gaussiana/" {% if topic == 'eliminacion-gaussiana' or topic == 'gauss-seidel' %}aria-current="page"{% endif %}><span aria-hidden="true">02</span> Laboratorio</a>
-    <a href="/sistemas-lineales/comparacion-metodos/" {% if topic == 'comparacion-metodos' %}aria-current="page"{% endif %}><span aria-hidden="true">03</span> Comparación</a>
-    <a href="{% url 'assessment:page' %}?alcance=modulo-2" {% if learning_section == 'assessment' %}aria-current="page"{% endif %}><span aria-hidden="true">04</span> Autoevaluación</a>
-    {% else %}
-    <a href="{% url 'theory-hub' %}" {% if learning_section == 'theory' %}aria-current="page"{% endif %}><span aria-hidden="true">01</span> Teoría</a>
-    <a href="{% url 'nonlinear:practice' %}" {% if learning_section == 'practice' %}aria-current="page"{% endif %}><span aria-hidden="true">02</span> Práctica guiada</a>
-    <a href="{% url 'nonlinear:assessment' %}" {% if learning_section == 'assessment' %}aria-current="page"{% endif %}><span aria-hidden="true">03</span> Autoevaluación</a>
-    {% endif %}
-    <a href="{% url 'resources' %}" {% if learning_section == 'resources' %}aria-current="page"{% endif %}><span aria-hidden="true">↗</span> Recursos</a>
+    <a href="{% url 'home' %}" {% if request.path == '/' %}aria-current="page"{% endif %} data-testid="sidebar-temario"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 5.5c3-1 6-1 9 1v14c-3-2-6-2-9-1zM21 5.5c-3-1-6-1-9 1v14c3-2 6-2 9-1z"/></svg>Curso</a>
+    <a href="{% url 'course-progress' %}" {% if request.path == '/avance/' %}aria-current="page"{% endif %}><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20h16M7 17v-5m5 5V7m5 10V3"/></svg>Mi avance</a>
   </nav>
-  <div class="sidebar-modules"><span class="nav-section">OTROS RECORRIDOS</span><a href="/ecuaciones-no-lineales/teoria/?vista=modulo">Otros temas <span aria-hidden="true">↗</span></a><a href="{% if is_linear_module %}/ecuaciones-no-lineales/teoria/{% else %}/sistemas-lineales/{% endif %}">{% if is_linear_module %}Raíces y errores{% else %}Sistemas lineales{% endif %} <span aria-hidden="true">↗</span></a><a href="/#modules">Programa del curso</a></div>
+  <nav class="sidebar-units" aria-label="Unidades del curso"><div class="sidebar-units-heading"><span>UNIDADES DEL CURSO</span><span aria-label="Avance total">{{ temario_percent }} %</span></div>{% if course_score.percent is not None %}<a class="sidebar-score" href="{% url 'course-progress' %}#score-title" data-testid="sidebar-score">Puntaje acumulado: <strong>{{ course_score.percent }} %</strong></a>{% endif %}{% for unit in temario_units %}<a href="{{ unit.url }}" class="sidebar-unit unit-accent-{{ unit.accent }}{% if unit.finished == unit.total %} is-done{% endif %}" {% if temario_unit.number == unit.number %}aria-current="true"{% endif %}><span class="sidebar-unit-number" aria-hidden="true">{% if unit.finished == unit.total %}✓{% else %}{{ unit.number }}{% endif %}</span><span class="sidebar-unit-title">{{ unit.title }}</span><span class="sidebar-unit-count">{{ unit.finished }}/{{ unit.total }}</span><span class="sidebar-unit-bar" aria-hidden="true"><span style="width:{{ unit.percent }}%"></span></span></a>{% endfor %}</nav>
+  <nav class="sidebar-support" aria-label="Material de apoyo"><a href="{% url 'introduction' %}">Introducción y prerrequisitos</a><a href="{% url 'resources' %}">Bibliografía y código</a></nav>
   <div class="sidebar-foot">Ingeniería de Sistemas · UNSA</div>
 </aside>

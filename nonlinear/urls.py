@@ -6,10 +6,8 @@ CONVERGEN (varios orígenes -> un solo destino):
   * Enlaces heredados `/laboratorio/?method=...` -> `legacy_lab`, que redirige 301 al `page`
     del método pedido conservando el resto de parámetros (marcadores, historial exportado).
 
-DIVERGEN (a propósito):
-  * `landing` (índice del módulo) y `page` (contenido concreto) son destinos distintos: uno
-    orienta y el otro trabaja. La búsqueda global vive en `core` (`/buscar/`), porque abarca
-    también los módulos del curso y no solo este módulo.
+Los índices heredados redirigen a la unidad del curso en `/`. La búsqueda global
+vive en `core` y las prácticas aceptan `?tema=` para mostrar solo el tema elegido.
 """
 from django.urls import path
 

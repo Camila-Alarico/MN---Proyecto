@@ -67,20 +67,8 @@ def api(request, data):
         restarted = False
         resumed_after_short_leave = False
         if attempt and away and away.get('attempt') == str(attempt.pk):
-            try:
-                away_seconds = timezone.now().timestamp() - float(away['at'])
-            except (KeyError, TypeError, ValueError):
-                away_seconds = 0
             request.session.pop(away_key, None)
-            if away_seconds > 5:
-                owner = request.user if request.user.is_authenticated else None
-                name = attempt.student_name
-                attempt_scope = attempt.scope
-                attempt.delete()
-                attempt = engine.start_attempt(owner, _session_key(request), name, attempt_scope)
-                restarted = True
-            else:
-                resumed_after_short_leave = True
+            resumed_after_short_leave = True
         elif away:
             request.session.pop(away_key, None)
         if not attempt:
@@ -125,5 +113,3 @@ def api(request, data):
     if action == 'review':
         return engine.review_attempt(attempt)
     raise MathInputError('Acción desconocida.')
-
-

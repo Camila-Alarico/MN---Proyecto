@@ -1,0 +1,12 @@
+<section class="measurement-demo" data-measurement-demo aria-label="Ejemplo interactivo de error y tolerancia">
+  <div class="measure-topline"><span class="entry-tag">PRUEBA CON TUS MANOS</span><span class="measure-live">Interactivo</span></div>
+  <h2>Una pieza debe medir 10 cm.</h2>
+  <p>Tu instrumento marca <strong data-measure-inline>9.80 cm</strong>.<br>¿La aceptarías si permite un error de hasta 0.10 cm?</p>
+  <div class="measure-readings"><div><span>Valor de referencia</span><strong>10.00 <small>cm</small></strong></div><div><span>Tu medición</span><strong><output data-measure-value>9.80</output> <small>cm</small></strong></div></div>
+  <div class="measure-ruler" aria-hidden="true"><div class="measure-band"><span>Zona aceptable</span></div><div class="measure-reference"></div><div class="measure-pointer" data-measure-pointer style="left:30%"></div><div class="measure-ticks"><span>9.50</span><span>9.75</span><span>10.00</span><span>10.25</span><span>10.50</span></div></div>
+  <label class="measure-slider-label">Mueve la medición y observa qué cambia<input type="range" min="950" max="1050" step="1" value="980" data-measure-slider aria-label="Medición en centímetros"></label>
+  <div class="measure-verdict" data-measure-verdict data-accepted="false" role="status" aria-live="polite"><strong data-measure-decision>No cumple la tolerancia</strong><span data-measure-reason>El error es 0.20 cm; el máximo permitido es 0.10 cm.</span></div>
+  <div class="measure-calculation"><span>Error absoluto</span><span>|10.00 − <span data-measure-equation>9.80</span>| = <strong data-measure-error>0.20 cm</strong></span></div>
+  <div class="measure-actions"><button type="button" data-measure-boundary>Probar el límite</button><button type="button" data-measure-reset>Volver al ejemplo</button></div>
+  <noscript><p>El error es 0.20 cm y supera la tolerancia de 0.10 cm. Activa JavaScript para mover la medición.</p></noscript>
+</section>

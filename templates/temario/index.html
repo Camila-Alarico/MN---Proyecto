@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Curso · NumLearn{% endblock %}
+{% block content %}
+<div id="modules" data-testid="home-temario"></div>
+
+<header class="temario-hero">
+  <div><span class="eyebrow">CURSO COMPLETO / {{ units|length }} UNIDADES</span><h1>Métodos Numéricos</h1>
+    <p>Elige una unidad y un tema. Dentro de cada lección encontrarás su explicación, ejemplos y actividades disponibles.</p>
+    {% if next_entry %}<a class="btn btn-primary" href="{{ next_entry.url }}" data-testid="temario-continue">{% if finished_items %}Continuar{% else %}Empezar{% endif %}: {{ next_entry.title }}</a>{% else %}<span class="completion-chip is-done"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> <span>Temario completado</span></span>{% endif %}
+  </div>
+  <div class="temario-overall" role="img" aria-label="Avance total: {{ finished_items }} de {{ total_items }} contenidos">
+    <div class="overall-ring" style="--value:{{ overall_percent }}"><span><strong>{{ overall_percent }}%</strong><small>avance</small></span></div>
+    <p><strong>{{ finished_items }}</strong> de {{ total_items }} contenidos completados</p>
+  </div>
+</header>
+
+<nav class="unit-index" aria-label="Unidades del curso">{% for unit in units %}<a href="#unidad-{{ unit.number }}" class="unit-index-item unit-accent-{{ unit.accent }}"><span class="unit-index-number">{{ unit.number|stringformat:'02d' }}</span><span class="unit-index-copy"><strong>{{ unit.title }}</strong><small>{{ unit.total }} tema{{ unit.total|pluralize }}</small></span><span class="unit-index-bar" aria-hidden="true"><span style="width:{{ unit.percent }}%"></span></span></a>{% endfor %}</nav>
+
+{% for unit in units %}
+<section class="unit-block unit-accent-{{ unit.accent }}" id="unidad-{{ unit.number }}" aria-labelledby="unit-title-{{ unit.number }}" data-testid="unit-{{ unit.number }}">
+  <header class="unit-head">
+    <span class="unit-badge" aria-hidden="true"><i class="bi bi-{{ unit.icon }}"></i></span>
+    <div class="unit-head-copy"><span class="eyebrow unit-eyebrow">UNIDAD {{ unit.number|stringformat:'02d' }}</span><h2 id="unit-title-{{ unit.number }}">{{ unit.title }}</h2><p>{{ unit.description }}</p></div>
+    <div class="unit-progress" aria-label="Avance de la unidad: {{ unit.finished }} de {{ unit.total }}"><span class="unit-progress-label"><strong>{{ unit.finished }}</strong>/{{ unit.total }}</span><span class="unit-progress-track" aria-hidden="true"><span style="width:{{ unit.percent }}%"></span></span></div>
+  </header>
+  <ol class="week-list">{% for week in unit.weeks %}
+    <li class="week-card{% if week.completed %} is-done{% endif %}" id="bloque-{{ week.week }}">
+      <div class="week-marker"><span class="week-number">{% if week.completed %}<i class="bi bi-check-lg" aria-hidden="true"></i>{% else %}{{ forloop.counter }}{% endif %}</span></div>
+      <div class="week-body"><p class="week-syllabus">{{ week.title }}</p>
+        <ul class="week-topics">{% for entry in week.entries %}<li><a class="topic-link{% if entry.completed %} is-done{% endif %}" href="{{ entry.url }}"><span class="topic-state" aria-hidden="true"><i class="bi {% if entry.completed %}bi-check-circle-fill{% else %}bi-{{ entry.icon }}{% endif %}"></i></span><span class="topic-copy"><strong>{{ entry.title }}{% if entry.is_new %} <span class="topic-new">Nuevo</span>{% endif %}</strong><small>{{ entry.summary }}</small></span><span class="topic-go" aria-hidden="true">{% if entry.completed %}Repasar{% else %}Abrir{% endif %}</span>{% if entry.completed %}<span class="visually-hidden">(completado)</span>{% endif %}</a></li>{% endfor %}</ul>
+      </div>
+    </li>{% endfor %}
+  </ol>
+  <section class="unit-evaluation" aria-label="Evaluación de la unidad {{ unit.number }}">{% if unit.assessment %}<div><h3>Evaluación disponible</h3><p>{{ unit.assessment.coverage }}</p></div><a class="btn btn-light" href="{{ unit.assessment.url }}">{{ unit.assessment.title }}</a>{% else %}<div><h3>Comprueba cada tema</h3><p>Las lecciones incluyen preguntas rápidas en «Comprueba». La autoevaluación completa de esta unidad todavía no está disponible.</p></div>{% endif %}</section>
+</section>
+{% endfor %}
+<aside class="course-support"><h2>Antes de empezar</h2><p>Si necesitas repasar funciones, derivadas, matrices o programación, consulta la <a href="{% url 'introduction' %}">introducción y los prerrequisitos</a>. Las <a href="{% url 'resources' %}">referencias y el código de ejemplo</a> están disponibles como material de apoyo.</p></aside>
+{% endblock %}

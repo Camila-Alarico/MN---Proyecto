@@ -1,0 +1,16 @@
+diff a/nonlinear/catalog.py b/nonlinear/catalog.py	(rejected hunks)
+@@ -137 +137 @@
+-        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.0001',
++        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.000001',
+@@ -155 +155 @@
+-        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.0001',
++        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.000001',
+@@ -173 +173 @@
+-        'query': 'expression=x%5E3-x-2&x0=1.5&tolerance=0.0001',
++        'query': 'expression=x%5E3-x-2&x0=1.5&tolerance=0.000001',
+@@ -192 +192 @@
+-        'query': 'expression=(x%2B2)%5E0.3333333333333333&x0=1.5&tolerance=0.0001',
++        'query': 'expression=(x%2B2)%5E0.3333333333333333&x0=1.5&tolerance=0.000001',
+@@ -211 +211 @@
+-        'query': 'expression=x%5E3-x-2&x0=1&x1=2&tolerance=0.0001',
++        'query': 'expression=x%5E3-x-2&x0=1&x1=2&tolerance=0.000001',

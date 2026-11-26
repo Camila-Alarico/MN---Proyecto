@@ -1,0 +1,4 @@
+diff a/nonlinear/services/bracketing.py b/nonlinear/services/bracketing.py	(rejected hunks)
+@@ -13 +13 @@
+-def solve_bracket(method, expression, a, b, tolerance=0.0001, max_iterations=100):
++def solve_bracket(method, expression, a, b, tolerance=0.000001, max_iterations=100):

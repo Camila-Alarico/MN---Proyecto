@@ -1,0 +1,11 @@
+{% if course_entry.kind != 'lesson' or course_is_practice %}
+<section class="course-activities" aria-label="Actividades de {{ course_entry.title }}">
+  <div><span class="eyebrow">EN ESTE TEMA</span><h2>{{ course_entry.title }}</h2><p>Las actividades de esta sección corresponden al tema que estás estudiando.</p></div>
+  <div class="course-activity-links">
+    {% if course_is_practice %}<a class="btn btn-light" href="{{ course_entry.url }}">Volver a la lección de {{ course_entry.title }}</a>{% elif course_practice_url %}<a class="btn btn-primary" href="{{ course_practice_url }}">Ejercicios guiados de {{ course_entry.title }}</a>{% endif %}
+    {% if course_entry.kind != 'lesson' and not course_is_practice %}{% if course_entry.completed %}<span class="completion-chip is-done">Marcado como completado</span>{% else %}<button class="btn btn-light complete-topic" data-topic="{{ course_entry.slug }}" data-endpoint="{{ course_progress_endpoint }}">Marcar este tema como completado</button>{% endif %}{% endif %}
+  </div>
+  <p class="course-assessment-note">{% if temario_unit.assessment %}La evaluación disponible se encuentra al final de la <a href="{{ temario_unit.url }}">unidad {{ temario_unit.number }}</a>, junto con los temas que incluye.{% else %}La <a href="{{ temario_unit.url }}">unidad {{ temario_unit.number }}</a> todavía no tiene una autoevaluación completa.{% endif %}</p>
+</section>
+{% endif %}
+{% if not course_is_practice %}<nav class="course-pager" aria-label="Continuar en el curso">{% if course_previous %}<a href="{{ course_previous.url }}"><small>Tema anterior · Unidad {{ course_previous.unit }}</small><strong>{{ course_previous.title }}</strong></a>{% endif %}{% if course_next %}<a href="{{ course_next.url }}"><small>Tema siguiente · Unidad {{ course_next.unit }}</small><strong>{{ course_next.title }}</strong></a>{% else %}<a href="{% url 'home' %}"><small>Fin del recorrido</small><strong>Volver al curso</strong></a>{% endif %}</nav>{% endif %}

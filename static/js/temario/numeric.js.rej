@@ -1,0 +1,4 @@
+diff a/static/js/temario/numeric.js b/static/js/temario/numeric.js	(rejected hunks)
+@@ -533 +533 @@
+-export function laplacePlate({size = 12, top = 100, bottom = 0, left = 75, right = 50, relaxation = 1.5, tolerance = 1e-4, maxIterations = 2000} = {}) {
++export function laplacePlate({size = 12, top = 100, bottom = 0, left = 75, right = 50, relaxation = 1.5, tolerance = 1e-6, maxIterations = 2000} = {}) {

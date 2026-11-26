@@ -2,8 +2,8 @@
 
 CONVERGEN: todas las búsquedas (barra superior, cualquier página) -> `search` (`/buscar/?q=`).
 El destino no depende de dónde se escriba la consulta.
-DIVERGEN: `home` (programa del curso) y `nonlinear:landing` (índice del módulo 1) son páginas
-distintas a propósito: la primera lista módulos, la segunda los temas de uno de ellos.
+La portada es el único índice del curso. Los índices anteriores redirigen a ella;
+las lecciones conservan sus URL canónicas y `/avance/` funciona también para invitados.
 """
 from django.urls import path
 
@@ -11,6 +11,8 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('avance/', views.course_progress, name='course-progress'),
+    path('empieza-aqui/', views.introduction, name='introduction'),
     path('teoria/', views.theory, name='theory-hub'),
     path('buscar/', views.search, name='search'),
     path('health/', views.health, name='health'),

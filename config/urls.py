@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/nonlinear/', include('nonlinear.api_urls')),
     path('sistemas-lineales/', include('linear.urls')),
     path('evaluacion/', include('assessment.urls')),
+    path('temario/', include('temario.urls')),
     path('api/linear/', include('linear.api_urls')),
     # Cuentas
     path('cuenta/login/', auth_views.LoginView.as_view(), name='login'),

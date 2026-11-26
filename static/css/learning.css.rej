@@ -1,0 +1,11 @@
+diff a/static/css/learning.css b/static/css/learning.css	(rejected hunks)
+@@ -61 +61 @@
+-.footer > span { display: block; }
++.footer-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 18px; }
+@@ -64,2 +64,4 @@
+-.footer-members { list-style: none; margin: 4px 0 0; padding: 0; }
+-.footer-members li { margin: 0; line-height: 1.6; }
++.footer-members { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 22px; list-style: none; margin: 4px 0 0; padding: 0; }
++.footer-members li { margin: 0; line-height: 1.5; }
++.footer-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; font-size: .625rem; opacity: .8; }
++.footer-meta a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

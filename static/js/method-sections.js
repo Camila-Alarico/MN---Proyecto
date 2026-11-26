@@ -26,7 +26,11 @@ document.querySelectorAll('[data-method-tabs]').forEach(nav => {
     window.dispatchEvent(new Event('resize'));
   }
   function fromLocation() {
+    // Los marcadores antiguos también pueden apuntar a una sección dentro de una pestaña.
+    const target = document.getElementById(location.hash.slice(1));
+    const panel = target?.closest('[data-method-panel]')?.dataset.methodPanel;
     const selected = tabs.find(tab => tab.hash === location.hash)
+      || tabs.find(tab => tab.dataset.panel === panel)
       || (location.search ? tabs.find(tab => tab.dataset.panel === 'laboratory') : tabs[0]);
     select(selected, false);
   }

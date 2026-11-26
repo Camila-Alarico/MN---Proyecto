@@ -1,0 +1,4 @@
+diff a/nonlinear/services/multiple_roots.py b/nonlinear/services/multiple_roots.py	(rejected hunks)
+@@ -4 +4 @@
+-def solve_multiple_roots(expression, x0, tolerance=0.0001, max_iterations=100):
++def solve_multiple_roots(expression, x0, tolerance=0.000001, max_iterations=100):

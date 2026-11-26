@@ -14,7 +14,6 @@ from linear.catalog import HISTORY_PREFIX, HISTORY_TITLES, METHODS as LINEAR_MET
 from nonlinear.catalog import DEFAULT_METHOD, METHODS, TOPICS
 from nonlinear.models import CalculationHistory
 
-from .catalog import MODULES
 from .forms import RegisterForm
 from .models import StudyNote, UserProgress
 from .search import MAX_QUERY_LENGTH, search_catalog
@@ -26,12 +25,21 @@ def health(request):
 
 
 def home(request):
-    return render(request, 'core/home.html', {'modules': MODULES})
+    from temario.views import index
+    return index(request)
 
 
 def theory(request):
-    """Teoría general del curso: módulos y sus temas. Destino único del botón «Teoría» de la barra lateral."""
-    return render(request, 'core/theory.html')
+    return redirect('home')
+
+
+def course_progress(request):
+    from assessment.scoring import course_score
+    from temario.views import units_context
+    score = course_score(request.user, request.session.session_key)
+    by_unit = {row['number']: row for row in score['units']}
+    units = [{**unit, 'score': by_unit[unit['number']]} for unit in units_context(request)]
+    return render(request, 'core/course_progress.html', {'units': units, 'score': score})
 
 
 def search(request):
@@ -162,3 +170,7 @@ def delete_note(request, pk):
     get_object_or_404(StudyNote, pk=pk, user=request.user).delete()
     messages.success(request, 'Apunte eliminado.')
     return redirect('notes')
+
+
+def introduction(request):
+    return render(request, "core/introduction.html")

@@ -9,17 +9,19 @@ from assessment.views import page as assessment_page
 
 
 def theory(request):
-    if request.GET.get('vista') == 'modulo':
-        return render(request, 'nonlinear/theory.html')
-    return redirect('nonlinear:page', slug='errores')
+    return redirect('/#unidad-3' if request.GET.get('vista') == 'modulo' else '/ecuaciones-no-lineales/errores/')
 
 
 def practice(request):
     topic = request.GET.get('tema', 'errores')
     focused = topic == 'errores' or topic not in (*learning.TOPICS, 'all')
     exercises = catalog()
+    selected = topic if topic in learning.TOPICS else None
+    if selected:
+        exercises = [item for item in exercises if item['topic'] == selected]
     return render(request, 'nonlinear/practice.html', {
-        'practice_topics': learning.TOPICS, 'errors_focus': focused,
+        'practice_topics': {selected: learning.TOPICS[selected]} if selected else learning.TOPICS,
+        'selected_topic': selected, 'selected_topic_title': learning.TOPICS.get(selected), 'errors_focus': focused,
         'exercises': [item for item in exercises if item['topic'] == 'errores'] if focused else exercises,
     })
 
@@ -39,6 +41,9 @@ def activity(request, data, mode):
         raise MathInputError('Recorrido desconocido.')
     key = 'learning_practice' + ('_errores' if scope == 'errores' else '')
     state = request.session.get(key)
+    # Recupera también prácticas guardadas con la política anterior.
+    if state:
+        state['locked'] = False
     action = data.get('action', 'resume')
     if action == 'start':
         if scope == 'errores' and data.get('topic') != 'errores':
@@ -54,7 +59,8 @@ def activity(request, data, mode):
         # El navegador avisa de que el estudiante salió de la página (visibilitychange, blur o pagehide).
         if data.get('id') and state and data.get('id') != state['id']:
             return {'success': True, 'ignored': True}  # aviso de una práctica anterior ya reemplazada
-        learning.lock_practice(state)
+        # Salir conserva la actividad y sus respuestas.
+        pass
     elif action == 'restart':
         state = learning.restart_practice(state)
     elif action != 'resume':

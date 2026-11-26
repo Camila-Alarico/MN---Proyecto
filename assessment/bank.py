@@ -26,6 +26,10 @@ SOURCES = {
     'eliminacion-gaussiana': ('Eliminación gaussiana', '/sistemas-lineales/eliminacion-gaussiana/', 'templates/linear/simulator.html'),
     'gauss-seidel': ('Gauss-Seidel', '/sistemas-lineales/gauss-seidel/', 'templates/linear/simulator.html'),
     'comparacion-metodos': ('Comparación de métodos', '/sistemas-lineales/comparacion-metodos/', 'templates/linear/comparacion-metodos.html'),
+    'aproximacion': ('Aproximación', '/temario/exactitud-precision/', 'templates/temario/lesson.html'),
+    'ajuste-curvas': ('Ajuste de curvas e interpolación', '/temario/regresion-minimos-cuadrados/', 'templates/temario/lesson.html'),
+    'integracion-derivacion': ('Integración y derivación numérica', '/temario/integracion-numerica/', 'templates/temario/lesson.html'),
+    'edo': ('Ecuaciones diferenciales ordinarias', '/temario/edo-euler/', 'templates/temario/lesson.html'),
 }
 MODULE_1 = ('errores', 'conceptos', 'biseccion', 'regla-falsa', 'punto-fijo', 'newton', 'secante', 'raices-multiples')
 MODULE_2 = ('formulacion', 'eliminacion-gaussiana', 'gauss-seidel', 'comparacion-metodos')
@@ -620,6 +624,14 @@ STEPS = [
     steps('G-s1', 'eliminacion-gaussiana', 'Eliminación con pivoteo parcial en un sistema 2×2', gen.gauss_pivot_2x2),
     steps('G-s2', 'eliminacion-gaussiana', 'Sustitución hacia atrás y residuo en un sistema 3×3', gen.gauss_back_substitution),
     steps('D-s1', 'gauss-seidel', 'Primera iteración de Gauss-Seidel y dominancia diagonal', gen.seidel_step),
+    steps('A-s1', 'aproximacion', 'Aproximación y error de Taylor', gen.approximation_taylor),
+    steps('A-s2', 'aproximacion', 'Redondeo y exactitud', gen.approximation_rounding),
+    steps('C-s1', 'ajuste-curvas', 'Ajuste lineal por mínimos cuadrados', gen.curve_least_squares),
+    steps('C-s2', 'ajuste-curvas', 'Interpolación lineal', gen.curve_interpolation),
+    steps('I-s1', 'integracion-derivacion', 'Integración con la regla trapezoidal', gen.integration_trapezoid),
+    steps('I-s2', 'integracion-derivacion', 'Derivación por diferencia central', gen.differentiation_central),
+    steps('O-s1', 'edo', 'Un paso del método de Euler', gen.edo_euler),
+    steps('O-s2', 'edo', 'Un paso de Euler modificado', gen.edo_rk2),
 
     steps('E-s4', 'errores', 'Tolerancia relativa: del porcentaje a la decisión', gen.tolerance_relative, sub='tolerancia'),
     steps('E-s5', 'errores', 'Propagación del error en una suma de tramos', gen.propagation_sum, sub='origen'),

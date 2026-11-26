@@ -205,7 +205,7 @@ class RoutingAndPagesTests(TestCase):
     def test_every_topic_has_a_canonical_page(self):
         for slug in TOPIC_SLUGS:
             self.assertEqual(self.client.get(reverse('linear:page', args=[slug])).status_code, 200, slug)
-        self.assertEqual(self.client.get('/sistemas-lineales/').status_code, 200)
+        self.assertRedirects(self.client.get('/sistemas-lineales/'), '/#unidad-4', fetch_redirect_response=False)
         self.assertEqual(self.client.get('/sistemas-lineales/inexistente/').status_code, 404)
 
     def test_legacy_lab_redirects_301_and_precedes_slug_route(self):
@@ -217,7 +217,7 @@ class RoutingAndPagesTests(TestCase):
     def test_section_is_part_of_the_same_navigation(self):
         home = self.client.get('/')
         self.assertContains(home, 'href="/sistemas-lineales/eliminacion-gaussiana/"')
-        self.assertContains(home, 'href="/sistemas-lineales/"')
+        self.assertContains(home, 'href="/#unidad-4"')
         found = self.client.get(reverse('search'), {'q': 'Gauss-Seidel'})
         self.assertContains(found, '/sistemas-lineales/gauss-seidel/')
 

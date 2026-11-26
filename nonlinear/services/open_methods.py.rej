@@ -1,0 +1,4 @@
+diff a/nonlinear/services/open_methods.py b/nonlinear/services/open_methods.py	(rejected hunks)
+@@ -5 +5 @@
+-def solve_open(method, expression, x0, tolerance=0.0001, max_iterations=100, x1=None):
++def solve_open(method, expression, x0, tolerance=0.000001, max_iterations=100, x1=None):

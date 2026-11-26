@@ -21,60 +21,7 @@ async function call(payload) {
   catch (error) {fail(error.message); return null;}
 }
 
-// --- Reinicio por salida prolongada ---------------------------------------------------------------
-// Solo se guarda una marca temporal en la sesión para aplicar la regla de 5 segundos.
-// No se envían eventos, duración ni información de salida a ningún panel docente.
-let awaySince = null;
-let leaveRequest = null;
-let blurTimer = null;
-
-function markAway(startedAt = Date.now()) {
-  if (!attemptId || awaySince !== null) return;
-  awaySince = startedAt;
-  leaveRequest = fetch(endpoint, {
-    method: 'POST',
-    credentials: 'same-origin',
-    keepalive: true,
-    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()},
-    body: JSON.stringify({action: 'leave', attempt: attemptId}),
-  }).catch(() => null);
-}
-
-async function markReturn() {
-  if (awaySince === null || !attemptId) return;
-  const elapsed = Date.now() - awaySince;
-  awaySince = null;
-  if (elapsed > 5000) {
-    if (leaveRequest) await leaveRequest;
-    const state = await call({action: 'restart'});
-    leaveRequest = null;
-    if (state) show(state, {restarted: true});
-  } else {
-    await post(endpoint, {action: 'return', attempt: attemptId}).catch(() => {});
-    leaveRequest = null;
-    if (!work.hidden && attemptId) {
-      const banner = node('p', 'assess-banner assessment-return-notice', 'Regresaste antes de superar los 5 segundos. Tu avance se conservó.');
-      work.prepend(banner);
-    }
-  }
-}
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) markAway();
-  else markReturn();
-});
-// Igual que la práctica guiada: una pérdida de foco breve se confirma tras 400 ms,
-// pero el umbral que reinicia la autoevaluación sigue siendo estrictamente 5 segundos.
-window.addEventListener('blur', () => {
-  clearTimeout(blurTimer);
-  blurTimer = setTimeout(() => {if (!document.hasFocus()) markAway(Date.now() - 400);}, 400);
-});
-window.addEventListener('focus', () => {
-  clearTimeout(blurTimer);
-  if (!document.hidden) markReturn();
-});
-window.addEventListener('pagehide', markAway);
-window.addEventListener('pageshow', markReturn);
+// El intento se conserva en el servidor al cambiar de pestaña o recargar.
 
 // --- Pantallas -------------------------------------------------------------------------------------
 function show(state, {resumed = false, restarted = false} = {}) {
@@ -86,16 +33,20 @@ function show(state, {resumed = false, restarted = false} = {}) {
   }
   if (state.done) return renderFinal(state);
   if (restarted || state.restarted) {
-    work.append(node('p', 'assess-banner assessment-away-notice', 'Saliste de la autoevaluación y permaneciste fuera más de 5 segundos. El intento anterior se reinició completamente; estás comenzando de nuevo en el mismo módulo.'));
+    work.append(node('p', 'assess-banner assessment-away-notice', 'Has reiniciado el intento. Estás comenzando de nuevo en el mismo módulo.'));
   } else if (resumed) {
-    work.append(node('p', 'assess-banner assessment-return-notice', 'Regresaste antes de superar los 5 segundos. Tu avance se conservó.'));
+    work.append(node('p', 'assess-banner assessment-return-notice', 'Tu avance se conservó. Continúa donde te quedaste.'));
   }
   renderQuestion(state.question);
 }
 
 function header(q) {
   const top = node('div', 'activity-top');
-  top.append(node('span', 'eyebrow', `Pregunta ${q.index + 1} · ${q.phase} · ${q.source.title}`));
+  // Problemas por etapas: «Problema 2 de 3 · Etapa 3 de 5». Los intentos antiguos con preguntas sueltas conservan «Pregunta».
+  const where = q.type === 'steps'
+    ? `Problema ${q.index + 1} de ${q.total} · Etapa ${Math.min(q.steps.current + 1, q.steps.count)} de ${q.steps.count}`
+    : `Pregunta ${q.index + 1} · ${q.phase}`;
+  top.append(node('span', 'eyebrow', `${where} · ${q.source.title}`));
   return [top];
 }
 
@@ -245,9 +196,14 @@ function renderFinal(state) {
   card.append(node('span', 'eyebrow', `RESULTADO · ${state.scope_title}`));
   const title = node('h2', '', state.passed ? 'Alcanzaste la meta de este intento' : 'Todavía hay temas por repasar'); title.tabIndex = -1; card.append(title);
   card.append(node('p', 'assess-score', `${state.percent} % de respuestas correctas`));
-  card.append(node('p', '', `Meta de aprobación: ${state.pass_percent} %. Las preguntas abiertas se valoran mediante una rúbrica de conceptos.`));
+  card.append(node('p', '', `Meta de aprobación: ${state.pass_percent} %. Cada etapa vale 1, 0.5 o 0.25 puntos según el intento en que aciertes, y 0 si hubo que mostrar la respuesta.`));
+  if (state.cumulative && state.cumulative.percent !== null) {
+    const link = node('a', '', 'Ver mi avance'); link.href = '/avance/';
+    const line = node('p', 'assess-banner', `Puntaje acumulado del curso: ${state.cumulative.percent} % (${state.cumulative.taken} de ${state.cumulative.available} unidades evaluables rendidas). `);
+    line.append(link); card.append(line);
+  }
   if (state.wrong) {
-    const open = node('button', 'btn btn-light', `Ver solo las preguntas que fallé (${state.wrong})`); open.type = 'button';
+    const open = node('button', 'btn btn-light', `Ver solo los problemas que fallé (${state.wrong})`); open.type = 'button';
     open.addEventListener('click', async () => {
       busy(open, true, 'Cargando…');
       const result = await call({action: 'review'});
@@ -255,7 +211,7 @@ function renderFinal(state) {
       if (result) renderReview(result, state);
     });
     card.append(open);
-  } else card.append(node('p', 'assess-banner', 'No fallaste ninguna pregunta en este intento.'));
+  } else card.append(node('p', 'assess-banner', 'No fallaste ningún problema en este intento.'));
   const actions = node('div', 'activity-actions');
   const again = node('button', 'btn btn-primary', 'Elegir módulo / comenzar otro intento'); again.type = 'button';
   again.addEventListener('click', () => {attemptId = null; work.hidden = true; startPanel.hidden = false; fail(''); document.getElementById('start-assessment').focus();});
@@ -269,13 +225,13 @@ function renderReview(data, finalState) {
   const head = node('section', 'activity-card');
   head.append(node('span', 'eyebrow', 'REVISIÓN · SOLO LO QUE FALLASTE'));
   const title = node('h2', '', `${data.wrong} respuestas para repasar`); title.tabIndex = -1; head.append(title);
-  head.append(node('p', '', 'Cada tarjeta muestra tu respuesta, la respuesta correcta y la explicación. Las preguntas que acertaste no aparecen.'));
+  head.append(node('p', '', 'Cada tarjeta muestra tu respuesta, la respuesta correcta y la explicación. Lo que acertaste no aparece.'));
   const back = node('button', 'btn btn-light', '← Volver al resultado'); back.type = 'button';
   back.addEventListener('click', () => {work.replaceChildren(); renderFinal(finalState);});
   head.append(back); work.append(head);
   data.review.forEach(item => {
     const box = node('article', 'review-item');
-    box.append(node('span', 'eyebrow', `Pregunta ${item.index} · ${item.phase} · ${item.topic}${item.subtopic ? ' · ' + item.subtopic : ''} · ${Math.round(item.score * 100)} %`));
+    box.append(node('span', 'eyebrow', `${item.type === 'steps' ? 'Problema' : 'Pregunta'} ${item.index} · ${item.phase} · ${item.topic}${item.subtopic ? ' · ' + item.subtopic : ''} · ${Math.round(item.score * 100)} %`));
     box.append(node('h3', '', item.prompt));
     if (item.type === 'multi') {
       item.options.forEach(option => {

@@ -1,0 +1,17 @@
+"""Preguntas originales para completar el tema de errores, sin otros métodos."""
+ERROR_QUESTIONS = [
+    ('e9', 'errores', '¿Qué diferencia hay entre el origen del error y su medida?', ['Redondeo describe un origen; absoluto describe una medida', 'Son nombres de lo mismo', 'El relativo siempre es un error de redondeo'], 0, 'Redondeo y truncamiento describen procesos que introducen diferencias. Absoluto, relativo y porcentual cuantifican una diferencia.'),
+    ('e10', 'errores', 'En una resta de cantidades próximas, los errores de los datos…', ['Siempre desaparecen', 'Pueden amplificarse en relación con el resultado', 'Obligan a que el resultado sea cero'], 1, 'Si la diferencia es pequeña, las perturbaciones de los operandos pueden ser grandes respecto al resultado. Es pérdida de cifras significativas.'),
+    ('e11', 'errores', 'Si no se conoce el valor de referencia, ¿se puede calcular directamente el error absoluto verdadero?', ['Sí, contando los decimales', 'Sí, usando cualquier tolerancia', 'No; se necesitan estimaciones o cotas justificadas'], 2, 'La definición requiere una referencia. Una estimación o cota puede ayudar, pero debe identificarse como tal.'),
+    ('e12', 'errores', '¿En qué unidades se expresa el error relativo absoluto?', ['No tiene unidades', 'Siempre en metros', 'En las unidades de la tolerancia absoluta'], 0, 'El cociente divide dos cantidades con las mismas unidades, que se cancelan.'),
+    ('e13', 'errores', 'Al redondear 6.28318 a tres decimales se obtiene…', ['6.28318', '6.283', '6.284'], 1, 'Se conservan tres cifras después del punto. La siguiente es 1, por lo que la última cifra se mantiene.'),
+    ('e14', 'errores', 'Para 1.2348, ¿qué dan truncamiento y redondeo a tres decimales?', ['Ambos 1.235', '1.235 y 1.234, respectivamente', '1.234 y 1.235, respectivamente'], 2, 'Truncar descarta el 8. Redondear lo considera y aumenta la tercera cifra decimal.'),
+    ('e15', 'errores', 'Referencia −40 y aproximación −39.8: el error absoluto es…', ['0.2', '−0.2', '79.8'], 0, 'La diferencia entre los valores tiene magnitud 0.2. El error absoluto es no negativo.'),
+    ('e16', 'errores', 'Con Ea = 0.05 y tolerancia absoluta 0.05, el resultado…', ['No cumple', 'Cumple', 'Depende del signo de la referencia'], 1, 'La regla declarada es Ea ≤ τ. La igualdad está incluida.'),
+    ('e17', 'errores', 'Un error relativo de 0.003 equivale a…', ['3 %', '0.003 %', '0.3 %'], 2, 'El porcentaje se obtiene multiplicando la proporción por 100: 100 × 0.003 = 0.3.'),
+    ('e18', 'errores', 'Referencia 0.02 y aproximación 0.019: el error relativo es…', ['0.05', '0.001', '5'], 0, 'Ea = 0.001; Er = 0.001 / 0.02 = 0.05. El porcentaje sería 5 %.'),
+    ('e19', 'errores', 'Referencia 0 y aproximación 0.001: ¿qué se puede afirmar?', ['Er = 0', 'Ea = 0.001; Er y Ep no están definidos', 'Ninguna medida está definida'], 1, 'La distancia absoluta sigue siendo válida. El relativo y su porcentaje dividen entre una referencia cero.'),
+    ('e20', 'errores', 'Si el error porcentual es 0.4 % y el límite permitido es 0.5 %, el resultado…', ['No cumple porque 0.4 es mayor que 0.005', 'Necesita otra unidad para compararse', 'Cumple el límite porcentual'], 2, 'Ambas cantidades están en porcentaje: 0.4 % ≤ 0.5 %. No compares un porcentaje con una proporción sin convertir.'),
+]
+# Primero conceptos; después aplicación. Cada intento toma cinco de cada grupo.
+APPLICATION_IDS = {'e2', 'e8', 'e13', 'e14', 'e15', 'e16', 'e17', 'e18', 'e19', 'e20'}

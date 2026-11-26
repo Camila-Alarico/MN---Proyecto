@@ -4,7 +4,7 @@ from functools import wraps
 
 from django.core.exceptions import RequestDataTooBig
 from django.http import Http404, HttpResponsePermanentRedirect, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
@@ -59,7 +59,7 @@ def json_endpoint(view):
 # --- Páginas ----------------------------------------------------------------
 
 def landing(request):
-    return render(request, 'nonlinear/landing.html')
+    return redirect('/#unidad-3')
 
 
 def page(request, slug):

@@ -21,22 +21,20 @@ async function advance(page, values) {
   await page.getByRole('button', {name: /Continuar →|Ver resultado →/}).click();
 }
 
-test('el recorrido principal mantiene errores y deja los otros temas como complemento', async ({page}, info) => {
+test('el curso conecta la unidad de errores con su lección y explorador', async ({page}, info) => {
   await page.goto('/');
-  await expect(page.locator('.sidebar-course')).toContainText('Errores numéricos');
-  await expect(page.locator('.study-home')).toContainText('ERRORES NUMÉRICOS');
-  await expect(page.locator('.home-paths')).not.toContainText('Newton');
-  await expect(page.locator('.secondary-topics')).not.toHaveAttribute('open', '');
-  await page.getByRole('link', {name: /Empezar por la teoría/}).click();
+  await expect(page.locator('.primary-learning a')).toHaveCount(2);
+  await expect(page.locator('.unit-block')).toHaveCount(6);
+  await page.locator('#unidad-1').getByRole('link', {name: /^Errores numéricos/}).click();
   await expect(page).toHaveURL(/\/errores\/$/);
-  await expect(page.getByRole('tab')).toHaveCount(3);
+  await expect(page.getByRole('tab')).toHaveCount(4);
   await expect(page.locator('#fundamento')).toBeVisible();
   await expect(page.locator('#aplicacion')).toBeHidden();
-  await page.getByRole('tab', {name: 'Origen del error'}).click();
+  await page.locator('#tipos').scrollIntoViewIfNeeded();
   await expect(page.locator('#tipos')).toBeVisible();
-  await expect(page.locator('#fundamento')).toBeHidden();
+  await expect(page.locator('#fundamento')).toBeVisible();
   await page.screenshot({path: info.outputPath('errores-origen.png'), fullPage: true});
-  await page.getByRole('tab', {name: 'Explorador'}).click();
+  await page.getByRole('tab', {name: 'Laboratorio', exact:true}).click();
   await expect(page.locator('#errors-form')).toBeVisible();
   for (const id of ['error-example', 'true-value', 'approximate-value', 'error-tolerance', 'approximation-slider', 'try-boundary', 'display-decimals']) await expect(page.locator(`#${id}`)).toBeVisible();
 });
@@ -78,14 +76,14 @@ test('referencia cero se resuelve sin confundir no definido con cero', async ({p
   await page.screenshot({path: info.outputPath('referencia-cero-resultado.png'), fullPage: true});
 });
 
-test('la evaluación de errores presenta conceptos, explicación y problema paso a paso en ese orden', async ({page}) => {
+test('la evaluación de errores combina conceptos, explicación y problema paso a paso en orden aleatorio', async ({page}) => {
   await page.goto('/ecuaciones-no-lineales/autoevaluacion/');
-  await expect(page.locator('input[name="scope"][value="errores"]')).toBeChecked();
-  await page.locator('#student-name').fill('Alumno de prueba');
-  await page.getByRole('button', {name: /Empezar autoevaluación/}).click();
+  await expect(page.locator('input[name="scope"][value="modulo-1"]')).toBeChecked();
+  await page.locator('input[name="scope"][value="errores"]').check();
+  await page.getByRole('button', {name: /Comenzar autoevaluación/}).click();
   const phases = [];
   for (let i = 0; i < 10; i++) {
-    await expect(page.locator('.activity-top')).toContainText(`Pregunta ${i + 1} de 10`);
+    await expect(page.locator('.activity-top')).toContainText(`Pregunta ${i + 1} ·`);
     phases.push((await page.locator('.activity-top .eyebrow').innerText()).split(' · ')[1]);
     if (phases[i] === 'Conceptos') {
       expect(await page.locator('.multi-options input[type=checkbox]').count()).toBeGreaterThanOrEqual(5);
@@ -109,9 +107,9 @@ test('la evaluación de errores presenta conceptos, explicación y problema paso
     }
     await page.getByRole('button', {name: /Continuar →|Ver resultado →/}).click();
   }
-  expect(phases.slice(0, 4)).toEqual(Array(4).fill('Conceptos'));
-  expect(phases.slice(4, 7)).toEqual(Array(3).fill('Explicación'));
-  expect(phases.slice(7)).toEqual(Array(3).fill('Problema paso a paso'));
+  expect(phases.filter(p => p === 'Conceptos')).toHaveLength(4);
+  expect(phases.filter(p => p === 'Explicación')).toHaveLength(3);
+  expect(phases.filter(p => p === 'Problema paso a paso')).toHaveLength(3);
 });
 
 test('el explorador respeta la igualdad decimal y mantiene sus controles', async ({page}) => {

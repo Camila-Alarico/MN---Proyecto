@@ -1,0 +1,4 @@
+diff a/nonlinear/forms.py b/nonlinear/forms.py	(rejected hunks)
+@@ -7 +7 @@
+-    tolerance = forms.FloatField(min_value=1e-12, max_value=0.1, initial=0.0001)
++    tolerance = forms.FloatField(min_value=1e-12, max_value=0.1, initial=0.000001)

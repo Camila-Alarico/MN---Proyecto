@@ -1,0 +1,11 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}Autoevaluación · NumLearn{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'js/nonlinear/activity.js' %}"></script>{% endblock %}
+{% block content %}
+<header class="study-heading compact"><span class="eyebrow">ERRORES NUMÉRICOS / AUTOEVALUACIÓN</span><h1>¿Qué tienes claro?<br>¿Qué vale la pena repasar?</h1><p>Primero comprueba los conceptos y después aplícalos. Todas las preguntas pertenecen al tema de errores.</p></header>
+<div id="activity" data-mode="quiz" data-scope="errores" data-endpoint="/api/nonlinear/learning/quiz/">
+<section id="activity-start" class="assessment-intro"><span class="eyebrow">MEDIDAS · ORIGEN DEL ERROR · TOLERANCIA</span><h2>10 preguntas para este intento</h2><p>Se eligen de un banco de {{ bank_size }} preguntas de errores: cinco de conceptos y cinco de aplicación. La primera respuesta de cada pregunta cuenta; después puedes leer la explicación y continuar.</p><div class="assessment-facts"><span>Una pregunta por pantalla</span><span>Sin límite de tiempo</span><span>Meta: 8 de 10 aciertos</span></div><button id="start-quiz" class="btn btn-primary">Empezar autoevaluación →</button><a class="practice-reading" href="{% url 'nonlinear:page' 'errores' %}">Prefiero repasar primero</a></section>
+<div id="activity-work" hidden></div><p id="activity-error" class="activity-feedback error" role="alert" hidden></p>
+</div>
+<noscript><p class="notice">Activa JavaScript para realizar la autoevaluación.</p></noscript>
+{% endblock %}

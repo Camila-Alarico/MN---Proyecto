@@ -43,3 +43,10 @@ jobs:
         env:
           DEBUG: "False"
           NUMLEARN_DEBUG: "False"
+      - name: Verify Vercel production build
+        run: python scripts/build_vercel.py
+        env:
+          VERCEL: "1"
+          VERCEL_URL: numlearn-ci.vercel.app
+          # PostgreSQL aislado de CI no usa TLS. En Vercel se exige por defecto.
+          DATABASE_URL: postgres://numlearn:local-ci-only@localhost:5432/numlearn?sslmode=disable

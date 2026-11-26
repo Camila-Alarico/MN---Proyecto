@@ -134,7 +134,7 @@ WORKED_EXAMPLES = {
             ['4', '1.500000', '1.625000', '1.562500', '0.252197', '0.062500'],
         ],
         'conclusion': 'Cada paso divide el error máximo entre dos: es seguro pero lento. Para una tolerancia de 10⁻⁴ harían falta unas 14 iteraciones.',
-        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.0001',
+        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.000001',
     },
     'false-position': {
         'title': 'Regla falsa en [1, 2]',
@@ -152,7 +152,7 @@ WORKED_EXAMPLES = {
             ['3', '1.462687', '2.000000', '1.504019', '−0.101818'],
         ],
         'conclusion': 'Avanza más rápido que bisección al principio, pero como b queda fijo la anchura del intervalo no tiende a cero: no sirve como cota del error.',
-        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.0001',
+        'query': 'expression=x%5E3-x-2&a=1&b=2&tolerance=0.000001',
     },
     'newton': {
         'title': 'Newton-Raphson desde x₀ = 1.5',
@@ -170,7 +170,7 @@ WORKED_EXAMPLES = {
             ['2', '1.521380', '0.000001', '5.943790', '1.521380'],
         ],
         'conclusion': 'Tres iteraciones bastan para seis decimales: convergencia cuadrática. Requiere la derivada y un buen punto inicial (compara con x₀ = 0, donde f′ se acerca a cero).',
-        'query': 'expression=x%5E3-x-2&x0=1.5&tolerance=0.0001',
+        'query': 'expression=x%5E3-x-2&x0=1.5&tolerance=0.000001',
     },
     'fixed-point': {
         'title': 'Punto fijo con g(x) = (x + 2)^(1/3)',
@@ -189,7 +189,7 @@ WORKED_EXAMPLES = {
             ['3', '1.521316', '1.521370', '0.000055'],
         ],
         'conclusion': 'Con g(x) = x³ − 2 (otro despeje válido) |g′| ≈ 6.9 > 1 y la iteración diverge: la elección de g decide todo.',
-        'query': 'expression=(x%2B2)%5E0.3333333333333333&x0=1.5&tolerance=0.0001',
+        'query': 'expression=(x%2B2)%5E0.3333333333333333&x0=1.5&tolerance=0.000001',
     },
     'secant': {
         'title': 'Secante desde x₀ = 1, x₁ = 2',
@@ -208,7 +208,7 @@ WORKED_EXAMPLES = {
             ['4', '1.462687', '1.531169', '1.520926', '−0.002693'],
         ],
         'conclusion': 'Converge con orden ≈ 1.618: más rápido que bisección, algo más lento que Newton, y sin calcular f′.',
-        'query': 'expression=x%5E3-x-2&x0=1&x1=2&tolerance=0.0001',
+        'query': 'expression=x%5E3-x-2&x0=1&x1=2&tolerance=0.000001',
     },
     'multiple-roots': {
         'title': 'Raíz doble de p(x) = (x − 1)²(x + 2) desde x₀ = 1.8',

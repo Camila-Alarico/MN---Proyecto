@@ -7,33 +7,8 @@ const work = document.getElementById('activity-work');
 const error = document.getElementById('activity-error');
 let generation = 0;
 
-// Bloqueo al salir de la página: el aviso se envía al servidor, que guarda el bloqueo en la sesión.
-// Así recargar, volver más tarde o usar el botón «atrás» no recupera el avance.
-let active = null, away = false, blurTimer = null;
-const csrfToken = () => document.querySelector('[name=csrfmiddlewaretoken]').value;
-function reportLeave() {
-  if (!active) return;
-  fetch(root.dataset.endpoint, {method: 'POST', credentials: 'same-origin', keepalive: true,
-    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken()},
-    body: JSON.stringify({action: 'leave', id: active, scope: root.dataset.scope || 'modulo'})}).catch(() => {});
-}
-function leave() {
-  if (!active || away) return;
-  away = true; reportLeave();
-}
-async function back() {
-  if (!away) return;
-  away = false;
-  const id = active;
-  // 'leave' es idempotente: si el aviso anterior no llegó, queda registrado ahora y el servidor responde bloqueado.
-  const state = await request({action: 'leave', id});
-  if (state) render(state, true);
-}
-document.addEventListener('visibilitychange', () => document.hidden ? leave() : (document.hasFocus() ? back() : null));
-window.addEventListener('blur', () => {clearTimeout(blurTimer); blurTimer = setTimeout(() => {if (!document.hasFocus()) leave();}, 400);});
-window.addEventListener('focus', () => {clearTimeout(blurTimer); if (!document.hidden) back();});
-window.addEventListener('pagehide', leave);
-window.addEventListener('pageshow', event => {if (event.persisted) back();});
+// El servidor conserva el avance; consultar teoría o cambiar de ventana es libre.
+let active = null;
 
 function node(tag, className, text) {
   const item = document.createElement(tag);
@@ -152,7 +127,7 @@ function graph(curve, diagonal = false, caption = '') {
 }
 
 function renderLocked(state) {
-  active = null; away = false;
+  active = null;
   clearMath(work);
   start.hidden = true; work.hidden = false; work.replaceChildren();
   const box = node('section', 'activity-card activity-locked');
@@ -175,7 +150,7 @@ function renderLocked(state) {
 
 function render(state, focus = false) {
   if (state.locked) return renderLocked(state);
-  active = state.done ? null : state.id; away = false;
+  active = state.done ? null : state.id;
   clearMath(work);
   start.hidden = true; work.hidden = false; work.replaceChildren();
   if (state.done) return finish(state, focus);
@@ -309,4 +284,4 @@ function finish(state, focus) {
 }
 
 const initial = await request({action: 'resume'});
-if (initial && !initial.empty && (!filter || filter.id === 'practice-skill' || filter.value === 'all' || filter.value === initial.topic)) render(initial);
+if (initial && !initial.empty && (!root.dataset.topic || initial.topic === root.dataset.topic) && (!filter || filter.id === 'practice-skill' || filter.value === 'all' || filter.value === initial.topic)) render(initial);
